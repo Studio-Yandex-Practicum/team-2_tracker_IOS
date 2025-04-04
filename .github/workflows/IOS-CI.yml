@@ -34,7 +34,7 @@ jobs:
           xcodebuild clean build -quiet  \
             -workspace ExpenseTracker.xcworkspace \
             -scheme ExpenseTracker \
-            -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Run tests
@@ -42,7 +42,7 @@ jobs:
           xcodebuild test \
             -workspace ExpenseTracker.xcworkspace \
             -scheme ExpenseTracker \
-            -destination 'platform=iOS Simulator,name=iPhone 15 Pro' \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
             CODE_SIGNING_ALLOWED=NO \
             -resultBundlePath TestResults.xcresult
 
