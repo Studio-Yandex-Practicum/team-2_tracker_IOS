@@ -1,0 +1,55 @@
+name: iOS-CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: Pods
+          key: $-pods-$
+          restore-keys: |
+            $-pods-
+
+      - name: Install CocoaPods
+        run: |
+          gem install cocoapods
+          pod install --repo-update
+
+      - name: Select Xcode 16.2
+        run: sudo xcode-select -switch /Applications/Xcode_16.2.app
+
+      - name: Build
+        run: |
+          xcodebuild clean build \
+            -workspace ExpenseTracker.xcworkspace \
+            -scheme ExpenseTracker \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \  
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Run tests
+        run: |
+          xcodebuild test \
+            -workspace ExpenseTracker.xcworkspace \
+            -scheme ExpenseTracker \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            CODE_SIGNING_ALLOWED=NO \
+            -resultBundlePath TestResults.xcresult
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults.xcresult
+
