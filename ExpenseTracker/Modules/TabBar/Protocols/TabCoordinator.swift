@@ -1,7 +1,3 @@
-//
-//  Untitled.swift
-//  ExpenseTracker
-//
-//  Created by /karisheesh on 06.04.2025.
-//
-
+protocol TabCoordinator: Coordinator {
+    var tabItem: TabItem { get }
+}
