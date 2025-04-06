@@ -1,7 +1,7 @@
 import UIKit
 
 // Главный координатор для управления таб-баром приложения
-final class MainTabCoordinator: Coordinator {
+final class MainTabBarCoordinator: Coordinator {
     
     // MARK: - Coordinator Properties
     
