@@ -1,11 +1,10 @@
 import UIKit
 
-final class ExpensesViewController: UIViewController {
+final class SettingsViewController: UIViewController {
     
-    weak var coordinator: ExpensesCoordinator?
+    weak var coordinator: SettingsCoordinator?
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .purple
     }
 }
