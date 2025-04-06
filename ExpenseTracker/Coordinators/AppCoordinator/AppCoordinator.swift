@@ -29,7 +29,7 @@ final class AppCoordinator: Coordinator {
         window.makeKeyAndVisible()
         
         // Создаем и запускаем координатор для основного потока
-        let mainCoordinator = MainTabCoordinator(tabBarController: tabBarController)
+        let mainCoordinator = MainTabBarCoordinator(tabBarController: tabBarController)
         addChild(mainCoordinator)
         mainCoordinator.start()
     }
