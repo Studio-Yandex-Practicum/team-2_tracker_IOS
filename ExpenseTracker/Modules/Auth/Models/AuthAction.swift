@@ -8,4 +8,5 @@ enum AuthAction: String {
     case repeatPassword = "Повторите пароль"
     case mail = "Почта"
     case areFirstInApp = "Впервые в приложении?"
+
 }
