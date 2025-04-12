@@ -43,6 +43,13 @@ final class AuthTextField: UITextField {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    // MARK: - Override Methods
+    
+    // Позволяет добавить внутренний отступ для иконки справа
+    override func rightViewRect(forBounds bounds: CGRect) -> CGRect {
+        return CGRect(x: bounds.width - 48, y: 0, width: 40, height: bounds.height)
+    }
 
     // MARK: - Setup Methods
     
@@ -76,7 +83,6 @@ final class AuthTextField: UITextField {
         toggleButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
         
         toggleButton.tintColor = .etPrimaryLabel
-        toggleButton.widthAnchor.constraint(equalToConstant: 48).isActive = true
         
         rightView = toggleButton
         rightViewMode = .always
