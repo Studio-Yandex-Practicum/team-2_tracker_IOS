@@ -6,7 +6,6 @@ final class AuthViewController: UIViewController {
 
     private let authStackView: UIStackView = {
         let stackView = UIStackView()
-        stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .vertical
         stackView.spacing = 16
         return stackView
@@ -14,7 +13,6 @@ final class AuthViewController: UIViewController {
     
     private let authLabel: UILabel = {
         let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
         label.text = AuthAction.auth.rawValue
         label.applyTextStyle(AppTextStyle.h1, textStyle: .title1)
         label.textColor = .etPrimaryLabel
@@ -46,7 +44,6 @@ final class AuthViewController: UIViewController {
     
     private let footerStackView: UIStackView = {
         let stackView = UIStackView()
-        stackView.translatesAutoresizingMaskIntoConstraints = false
         stackView.axis = .horizontal
         stackView.distribution = .fillProportionally
         stackView.spacing = 4
@@ -55,7 +52,6 @@ final class AuthViewController: UIViewController {
     
     private let footerLabel: UILabel = {
         let label = UILabel()
-        label.translatesAutoresizingMaskIntoConstraints = false
         label.textColor = .etPrimaryLabel
         label.text = AuthAction.areFirstInApp.rawValue
         label.applyTextStyle(.caption, textStyle: .caption1)
@@ -86,13 +82,19 @@ final class AuthViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = .etBackground
-        setupAuthStackViewConstraints()
-        setupFooterStackViewConstraints()
+        setupViews()
+        setupAuthStackView()
+        setupFooterStackView()
     }
     
-    private func setupAuthStackViewConstraints() {
-        view.addSubview(authStackView)
-        
+    private func setupViews() {
+        [authStackView, footerStackView].forEach {
+            view.addSubview($0)
+            $0.translatesAutoresizingMaskIntoConstraints = false
+        }
+    }
+    
+    private func setupAuthStackView() {
         [authLabel, loginTextField, passwordTextField, forgotPasswordButton, loginButton].forEach {
             authStackView.addArrangedSubview($0)
             if $0 == forgotPasswordButton {
@@ -101,7 +103,10 @@ final class AuthViewController: UIViewController {
                 $0.heightAnchor.constraint(equalToConstant: 48).isActive = true
             }
         }
-        
+        setupAuthStackViewConstraints()
+    }
+    
+    private func setupAuthStackViewConstraints() {
         NSLayoutConstraint.activate([
             authStackView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             authStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
@@ -109,11 +114,14 @@ final class AuthViewController: UIViewController {
         ])
     }
     
-    private func setupFooterStackViewConstraints() {
-        view.addSubview(footerStackView)
+    private func setupFooterStackView() {
         footerStackView.addArrangedSubview(footerLabel)
         footerStackView.addArrangedSubview(footerButton)
         
+        setupFooterStackViewConstraints()
+    }
+    
+    private func setupFooterStackViewConstraints() {
         NSLayoutConstraint.activate([
             footerStackView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -31),
             footerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
