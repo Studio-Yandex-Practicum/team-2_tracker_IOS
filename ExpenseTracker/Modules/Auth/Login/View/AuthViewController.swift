@@ -14,14 +14,14 @@ final class AuthViewController: UIViewController {
     private let authLabel: UILabel = {
         let label = UILabel()
         label.text = AuthAction.auth.rawValue
-        label.applyTextStyle(AppTextStyle.h1, textStyle: .title1)
+        label.applyTextStyle(AppTextStyle.largeTitle, textStyle: .largeTitle)
         label.textColor = .etPrimaryLabel
         label.textAlignment = .center
         return label
     }()
     
     private let loginTextField: AuthTextField = {
-        let textField = AuthTextField(placeholder: AuthAction.login.rawValue)
+        let textField = AuthTextField(placeholder: AuthAction.mail.rawValue)
         return textField
     }()
     
@@ -85,6 +85,8 @@ final class AuthViewController: UIViewController {
         setupViews()
         setupAuthStackView()
         setupFooterStackView()
+        setupButtonTargets()
+        setupTapGesture()
     }
     
     private func setupViews() {
@@ -127,5 +129,25 @@ final class AuthViewController: UIViewController {
             footerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             footerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
+    }
+    
+    private func setupButtonTargets() {
+        footerButton.addTarget(self, action: #selector(showRegistrationView), for: .touchUpInside)
+    }
+    
+    // Возможность скрывать клавиатуру по тапу в область не предназначенную для ввода
+    private func setupTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc
+    private func showRegistrationView() {
+        coordinator?.showRegistration()
+    }
+    
+    @objc
+    private func dismissKeyboard() {
+        view.endEditing(true)
     }
 }
