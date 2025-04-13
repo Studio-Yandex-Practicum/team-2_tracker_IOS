@@ -5,6 +5,7 @@ import UIKit
 /// - Адаптивного межстрочного интервала
 /// - Кернинга (межбуквенного расстояния)
 enum AppTextStyle {
+    case largeTitle
     case h1
     case h2
     case body
@@ -18,9 +19,12 @@ enum AppTextStyle {
         let size: CGFloat
         
         switch self {
-        case .h1:
+        case .largeTitle:
             fontName = "Manrope-Bold"
             size = 24
+        case .h1:
+            fontName = "Manrope-SemiBold"
+            size = 20
         case .h2:
             fontName = "Manrope-Medium"
             size = 16
@@ -46,7 +50,8 @@ enum AppTextStyle {
     
     var lineHeight: CGFloat {
         switch self {
-        case .h1: return 32
+        case .largeTitle: return 32
+        case .h1: return 28
         case .h2, .body: return 24
         case .button: return 24
         case .caption, .tag: return 20
@@ -56,7 +61,8 @@ enum AppTextStyle {
     
     var letterSpacing: CGFloat {
         switch self {
-        case .h1, .numbers: return -0.4
+        case .h1: return -0.2
+        case .largeTitle, .numbers: return -0.4
         default: return 0
         }
     }
