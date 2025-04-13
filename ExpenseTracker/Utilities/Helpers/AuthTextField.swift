@@ -64,15 +64,16 @@ final class AuthTextField: UITextField {
         )
         
         self.backgroundColor = backgroundColor
-        self.font = AppTextStyle.body.font
-        self.textColor = titleColor
-        self.layer.cornerRadius = Constants.defaultCornerRadius
-        self.layer.borderColor = borderColor.cgColor
-        self.layer.borderWidth = borderWidth
-        self.layer.masksToBounds = true
-        self.translatesAutoresizingMaskIntoConstraints = false
-        self.leftView = paddingView
-        self.leftViewMode = .always
+        font = AppTextStyle.body.font
+        textColor = titleColor
+        layer.cornerRadius = Constants.defaultCornerRadius
+        layer.borderColor = borderColor.cgColor
+        layer.borderWidth = borderWidth
+        layer.masksToBounds = true
+        translatesAutoresizingMaskIntoConstraints = false
+        leftView = paddingView
+        leftViewMode = .always
+        textContentType = .oneTimeCode
     }
     
     private func setupToggleButton() {
