@@ -3,11 +3,7 @@ import UIKit
 final class RegistrationViewController: UIViewController {
     
     weak var coordinator: AuthCoordinator?
-    
-    private let customNavigationBar: CustomBackBarItem = {
-        let view = CustomBackBarItem()
-        return view
-    }()
+    private var customNavigationBar: CustomBackBarItem?
     
     private let registrationStackView: UIStackView = {
         let stackView = UIStackView()
@@ -56,7 +52,7 @@ final class RegistrationViewController: UIViewController {
     private let privacyPolicyLabel: UILabel = {
         let label = UILabel()
         label.textColor = .etPrimaryLabel
-        label.text = AuthAction.privacyPolicy.rawValue
+        label.text = AuthAction.registrationPrivacyPolicy.rawValue
         label.numberOfLines = 2
         label.applyTextStyle(.caption, textStyle: .caption1)
         return label
@@ -81,10 +77,9 @@ final class RegistrationViewController: UIViewController {
     
     private func setupUI() {
         view.backgroundColor = .etBackground
-        navigationItem.hidesBackButton = true
         
+        setupNavBar()
         setupViews()
-        setupСustomNavigationBar()
         setupRegistrationStackView()
         setupPrivacyPolicyStackView()
         setupFooterStackView()
@@ -94,25 +89,19 @@ final class RegistrationViewController: UIViewController {
         setupTapGesture()
     }
     
+    private func setupNavBar() {
+        navigationItem.hidesBackButton = true
+        
+        // Расширение UIViewController+setupCustomNavBar для кастомной навигации
+        customNavigationBar = setupCustomNavBar(title: .registration, backAction: #selector(showAuthFlow))
+    }
+    
     private func setupViews() {
-        [customNavigationBar, registrationStackView, footerStackView, privacyPolicyStackView, registrationButton]
+        [registrationStackView, footerStackView, privacyPolicyStackView, registrationButton]
         .forEach {
             view.addSubview($0)
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
-    }
-    
-    private func setupСustomNavigationBar() {
-        customNavigationBar.addTargetToBackButton(self, action: #selector(showAuthFlow))
-        setupСustomNavigationBarConstraints()
-    }
-    
-    private func setupСustomNavigationBarConstraints() {
-        NSLayoutConstraint.activate([
-            customNavigationBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: -16),
-            customNavigationBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            customNavigationBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
-        ])
     }
     
     private func setupRegistrationStackView() {
@@ -125,8 +114,10 @@ final class RegistrationViewController: UIViewController {
     }
     
     private func setupRegistrationStackViewConstraints() {
+        guard let customNavigationBar else { return }
+        
         NSLayoutConstraint.activate([
-            registrationStackView.topAnchor.constraint(equalTo: customNavigationBar.bottomAnchor, constant: 16),
+            registrationStackView.topAnchor.constraint(equalTo: customNavigationBar.bottomAnchor, constant: 20),
             registrationStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             registrationStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
@@ -180,7 +171,7 @@ final class RegistrationViewController: UIViewController {
     
     @objc
     private func showAuthFlow() {
-        coordinator?.dismissRegistration()
+        coordinator?.dismissCurrentFlow()
     }
     
     @objc

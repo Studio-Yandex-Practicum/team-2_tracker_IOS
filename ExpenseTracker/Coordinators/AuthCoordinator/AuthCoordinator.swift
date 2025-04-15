@@ -38,7 +38,7 @@ final class AuthCoordinator: Coordinator, AuthCoordinatorProtocol {
         navigationController.pushViewController(privacyPolicyViewController, animated: true)
     }
     
-    func dismissRegistration() {
+    func dismissCurrentFlow() {
         navigationController.popViewController(animated: true)
     }
     
