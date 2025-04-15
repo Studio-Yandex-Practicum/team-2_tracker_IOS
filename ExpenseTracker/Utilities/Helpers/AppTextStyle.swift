@@ -5,6 +5,7 @@ import UIKit
 /// - Адаптивного межстрочного интервала
 /// - Кернинга (межбуквенного расстояния)
 enum AppTextStyle {
+    
     case largeTitle
     case h1
     case h2
