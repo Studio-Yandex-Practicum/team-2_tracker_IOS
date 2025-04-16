@@ -44,8 +44,18 @@ final class AuthCoordinator: Coordinator, AuthCoordinatorProtocol {
         navigationController.pushViewController(passwordRecoveryViewController, animated: true)
     }
     
+    func showNewPasswordFlow() {
+        let newPasswordViewController = NewPasswordViewController()
+        newPasswordViewController.coordinator = self
+        navigationController.pushViewController(newPasswordViewController, animated: true)
+    }
+    
     func dismissCurrentFlow() {
         navigationController.popViewController(animated: true)
+    }
+    
+    func dismissAllFlows() {
+        navigationController.popToRootViewController(animated: true)
     }
     
     // MARK: - Auth Flow Methods
