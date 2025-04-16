@@ -4,10 +4,14 @@
 target 'ExpenseTracker' do
   # Comment the next line if you don't want to use dynamic frameworks
   use_frameworks!
-  pod 'SwiftLint'
 
   # Pods for ExpenseTracker
 
+  # SwiftLint
+  pod 'SwiftLint'
+  
+  # Firebase
+  pod 'FirebaseAuth'
 
   target 'ExpenseTrackerTests' do
     inherit! :search_paths
