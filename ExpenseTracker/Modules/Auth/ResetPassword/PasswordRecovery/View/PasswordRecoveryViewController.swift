@@ -52,6 +52,8 @@ final class PasswordRecoveryViewController: UIViewController {
     }
     
     private func setupSendButton() {
+        sendButton.addTarget(self, action: #selector(showNewPasswordFlow), for: .touchUpInside)
+        
         NSLayoutConstraint.activate([
             sendButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -31),
             sendButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
@@ -72,5 +74,10 @@ final class PasswordRecoveryViewController: UIViewController {
     @objc
     private func showAuthFlow() {
         coordinator?.dismissCurrentFlow()
+    }
+    
+    @objc
+    private func showNewPasswordFlow() {
+        coordinator?.showNewPasswordFlow()
     }
 }
