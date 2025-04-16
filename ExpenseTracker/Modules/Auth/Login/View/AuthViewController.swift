@@ -132,6 +132,7 @@ final class AuthViewController: UIViewController {
     }
     
     private func setupButtonTargets() {
+        forgotPasswordButton.addTarget(self, action: #selector(showPasswordRecover), for: .touchUpInside)
         footerButton.addTarget(self, action: #selector(showRegistrationView), for: .touchUpInside)
     }
     
@@ -139,6 +140,11 @@ final class AuthViewController: UIViewController {
     private func setupTapGesture() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc
+    private func showPasswordRecover() {
+        coordinator?.showPasswordRecovery()
     }
 
     @objc
