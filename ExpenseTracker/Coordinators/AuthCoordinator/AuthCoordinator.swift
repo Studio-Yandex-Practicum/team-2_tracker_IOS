@@ -27,7 +27,8 @@ final class AuthCoordinator: Coordinator, AuthCoordinatorProtocol {
     }
     
     func showRegistration() {
-        let registrationViewController = RegistrationViewController()
+        let registrationViewModel = RegistrationViewModel()
+        let registrationViewController = RegistrationViewController(viewModel: registrationViewModel)
         registrationViewController.coordinator = self
         navigationController.pushViewController(registrationViewController, animated: true)
     }
