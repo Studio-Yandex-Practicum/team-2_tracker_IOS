@@ -21,7 +21,6 @@ extension UIViewController {
             navBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
             navBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
-        
         return navBar
     }
 }
