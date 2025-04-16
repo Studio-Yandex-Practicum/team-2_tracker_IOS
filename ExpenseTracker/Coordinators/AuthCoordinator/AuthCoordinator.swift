@@ -38,6 +38,12 @@ final class AuthCoordinator: Coordinator, AuthCoordinatorProtocol {
         navigationController.pushViewController(privacyPolicyViewController, animated: true)
     }
     
+    func showPasswordRecovery() {
+        let passwordRecoveryViewController = PasswordRecoveryViewController()
+        passwordRecoveryViewController.coordinator = self
+        navigationController.pushViewController(passwordRecoveryViewController, animated: true)
+    }
+    
     func dismissCurrentFlow() {
         navigationController.popViewController(animated: true)
     }
