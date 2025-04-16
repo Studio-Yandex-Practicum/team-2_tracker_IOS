@@ -31,7 +31,7 @@ extension ExpensesCoordinator: TabCoordinator {
         navigationController.tabBarItem = UITabBarItem(
             title: tabItem.title,
             image: tabItem.icon,
-            tag: 0
+            tag: 1
         )
     }
 }

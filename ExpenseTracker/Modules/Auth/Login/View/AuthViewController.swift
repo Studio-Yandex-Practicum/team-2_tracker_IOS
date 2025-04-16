@@ -3,6 +3,7 @@ import UIKit
 final class AuthViewController: UIViewController {
     
     weak var coordinator: AuthCoordinator?
+    private let authViewModel: AuthViewModel
 
     private let authStackView: UIStackView = {
         let stackView = UIStackView()
@@ -68,6 +69,7 @@ final class AuthViewController: UIViewController {
     }()
             
     init(viewModel: AuthViewModel) {
+        self.authViewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -77,7 +79,22 @@ final class AuthViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        bindViewModel()
         setupUI()
+    }
+    
+    private func bindViewModel() {
+        authViewModel.isLoading.bind { [weak self] isLoading in
+            guard let self else { return }
+            self.loginButton.isEnabled = !isLoading
+        }
+        
+        authViewModel.isLoggedIn.bind { [weak self] isLoggedIn in
+            guard let self else { return }
+            if isLoggedIn {
+                coordinator?.completeAuth()
+            }
+        }
     }
     
     private func setupUI() {
@@ -133,6 +150,7 @@ final class AuthViewController: UIViewController {
     
     private func setupButtonTargets() {
         forgotPasswordButton.addTarget(self, action: #selector(showPasswordRecover), for: .touchUpInside)
+        loginButton.addTarget(self, action: #selector(signIn), for: .touchUpInside)
         footerButton.addTarget(self, action: #selector(showRegistrationView), for: .touchUpInside)
     }
     
@@ -145,6 +163,15 @@ final class AuthViewController: UIViewController {
     @objc
     private func showPasswordRecover() {
         coordinator?.showPasswordRecovery()
+    }
+    
+    @objc
+    private func signIn() {
+        guard
+            let email = loginTextField.text, !email.isEmpty,
+            let password = passwordTextField.text, !password.isEmpty
+        else { return }
+        authViewModel.login(email: email, password: password)
     }
 
     @objc
