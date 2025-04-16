@@ -1,6 +1,6 @@
 import UIKit
 
-final class PasswordResetViewController: UIViewController {
+final class NewPasswordViewController: UIViewController {
     
     weak var coordinator: AuthCoordinator?
     
@@ -13,7 +13,7 @@ final class PasswordResetViewController: UIViewController {
     
     private let newPasswordLabel: UILabel = {
         let label = UILabel()
-        label.text = AuthAction.auth.rawValue
+        label.text = AuthAction.newPassword.rawValue
         label.applyTextStyle(AppTextStyle.largeTitle, textStyle: .largeTitle)
         label.textColor = .etPrimaryLabel
         label.textAlignment = .center
@@ -21,17 +21,25 @@ final class PasswordResetViewController: UIViewController {
     }()
     
     private let passwordTextField: AuthTextField = {
-        let textField = AuthTextField(placeholder: AuthAction.mail.rawValue)
-        return textField
-    }()
-    
-    private let confirmPasswordTextField: AuthTextField = {
         let textField = AuthTextField(placeholder: AuthAction.password.rawValue, isEyeIconHidden: false)
         return textField
     }()
     
+    private let confirmPasswordTextField: AuthTextField = {
+        let textField = AuthTextField(placeholder: AuthAction.repeatPassword.rawValue, isEyeIconHidden: false)
+        return textField
+    }()
+    
     private let confirmButton: MainButton = {
-        let button = MainButton(title: ButtonAction.login.rawValue, backgroundColor: .etInactive)
+        let button = MainButton(title: ButtonAction.confirm.rawValue, backgroundColor: .etInactive)
+        return button
+    }()
+    
+    private let backToAuthButton: UIButton = {
+        let button = UIButton()
+        button.setTitle(ButtonAction.backToAuth.rawValue, for: .normal)
+        button.setTitleColor(.etPrimaryLabel, for: .normal)
+        button.titleLabel?.applyTextStyle(.button, textStyle: .body)
         return button
     }()
     
@@ -44,6 +52,8 @@ final class PasswordResetViewController: UIViewController {
         view.backgroundColor = .etBackground
         setupViews()
         setupNewPasswordStackView()
+        setupTargets()
+        setupTapGesture()
     }
     
     private func setupViews() {
@@ -54,7 +64,7 @@ final class PasswordResetViewController: UIViewController {
     }
     
     private func setupNewPasswordStackView() {
-        [newPasswordLabel, passwordTextField, confirmPasswordTextField, confirmButton].forEach {
+        [newPasswordLabel, passwordTextField, confirmPasswordTextField, confirmButton, backToAuthButton].forEach {
             newPasswordStackView.addArrangedSubview($0)
             $0.heightAnchor.constraint(equalToConstant: 48).isActive = true
         }
@@ -67,5 +77,24 @@ final class PasswordResetViewController: UIViewController {
             newPasswordStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             newPasswordStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
+    }
+    
+    private func setupTargets() {
+        backToAuthButton.addTarget(self, action: #selector(showAuth), for: .touchUpInside)
+    }
+    
+    private func setupTapGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    @objc
+    private func showAuth() {
+        coordinator?.dismissAllFlows()
+    }
+    
+    @objc
+    private func dismissKeyboard() {
+        view.endEditing(true)
     }
 }
