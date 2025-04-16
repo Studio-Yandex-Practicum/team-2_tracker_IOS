@@ -12,4 +12,5 @@ enum AuthAction: String {
     case registrationPrivacyPolicy = "Нажимая кнопку, вы соглашаетесь с"
     case privacyPolicy = "Политика конфиденциальности и обработки персональных данных"
     case passwordRecovery = "Восстановить пароль"
+    case newPassword = "Новый пароль"
 }
