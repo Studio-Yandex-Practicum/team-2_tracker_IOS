@@ -90,7 +90,7 @@ final class RegistrationViewController: UIViewController {
     }
     
     private func setupNavBar() {
-        navigationItem.hidesBackButton = true
+        navigationController?.setNavigationBarHidden(true, animated: false)
         
         // Расширение UIViewController+setupCustomNavBar для кастомной навигации
         customNavigationBar = setupCustomNavBar(title: .registration, backAction: #selector(showAuthFlow))

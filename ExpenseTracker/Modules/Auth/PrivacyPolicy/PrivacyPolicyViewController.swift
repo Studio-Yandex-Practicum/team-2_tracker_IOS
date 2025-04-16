@@ -42,7 +42,7 @@ final class PrivacyPolicyViewController: UIViewController {
     }
     
     private func setupNavBar() {
-        navigationItem.hidesBackButton = true
+        navigationController?.setNavigationBarHidden(true, animated: false)
         customNavigationBar = setupCustomNavBar(title: .privacyPolicy, isPolicyPrivacyFlow: true, backAction: #selector(showRegistrationFlow))
     }
     
