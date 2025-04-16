@@ -4,6 +4,7 @@ final class RegistrationViewController: UIViewController {
     
     weak var coordinator: AuthCoordinator?
     private var customNavigationBar: CustomBackBarItem?
+    private let registrationViewModel: RegistrationViewModel
     
     private let registrationStackView: UIStackView = {
         let stackView = UIStackView()
@@ -70,9 +71,33 @@ final class RegistrationViewController: UIViewController {
         return button
     }()
     
+    init(viewModel: RegistrationViewModel) {
+        self.registrationViewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        bindViewModel()
         setupUI()
+    }
+    
+    private func bindViewModel() {
+        registrationViewModel.isLoading.bind { [weak self] isLoading in
+            guard let self else { return }
+            self.registrationButton.isEnabled = !isLoading
+        }
+        
+        registrationViewModel.isLoggedIn.bind { [weak self] isLoggedIn in
+            guard let self else { return }
+            if isLoggedIn {
+                coordinator?.completeAuth()
+            }
+        }
     }
     
     private func setupUI() {
@@ -85,7 +110,7 @@ final class RegistrationViewController: UIViewController {
         setupFooterStackView()
         setupCheckBoxButton()
         setupPrivacyPolicyButton()
-        setupRegistrationButtonConstraints()
+        setupRegistrationButton()
         setupTapGesture()
     }
     
@@ -155,6 +180,11 @@ final class RegistrationViewController: UIViewController {
         privacyPolicyButton.addTarget(self, action: #selector(showPrivacyPolicyFlow), for: .touchUpInside)
     }
     
+    private func setupRegistrationButton() {
+        registrationButton.addTarget(self, action: #selector(signIn), for: .touchUpInside)
+        setupRegistrationButtonConstraints()
+    }
+    
     private func setupRegistrationButtonConstraints() {
         NSLayoutConstraint.activate([
             registrationButton.heightAnchor.constraint(equalToConstant: 48),
@@ -172,6 +202,20 @@ final class RegistrationViewController: UIViewController {
     @objc
     private func showAuthFlow() {
         coordinator?.dismissCurrentFlow()
+    }
+    
+    @objc
+    private func signIn() {
+        guard
+            let email = loginTextField.text, !email.isEmpty,
+            let password = passwordTextField.text, !password.isEmpty,
+            let confirmPassword = repeatPasswordTextField.text,
+                !confirmPassword.isEmpty, password == confirmPassword
+        else {
+            // обработать ошибки
+            return
+        }
+        registrationViewModel.register(email: email, password: password)
     }
     
     @objc
