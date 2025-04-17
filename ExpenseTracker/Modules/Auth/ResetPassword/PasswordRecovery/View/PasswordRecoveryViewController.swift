@@ -4,6 +4,7 @@ final class PasswordRecoveryViewController: UIViewController {
     
     weak var coordinator: AuthCoordinator?
     private var customNavigationBar: CustomBackBarItem?
+    private let viewModel: PasswordRecoveryViewModel
     
     private let emailTextField: AuthTextField = {
         let textField = AuthTextField(placeholder: AuthAction.mail.rawValue)
@@ -15,6 +16,15 @@ final class PasswordRecoveryViewController: UIViewController {
         return button
     }()
     
+    init(viewModel: PasswordRecoveryViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -23,11 +33,21 @@ final class PasswordRecoveryViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .etBackground
         
+        bindViewModel()
         setupNavBar()
         setupViews()
         setupEmailTextField()
         setupSendButton()
         setupTapGesture()
+    }
+    
+    private func bindViewModel() {
+        viewModel.letterWasSent.bind { [weak self] letterWasSent in
+            guard let self else { return }
+            if letterWasSent {
+                self.coordinator?.dismissAllFlows()
+            }
+        }
     }
     
     private func setupNavBar() {
@@ -52,7 +72,7 @@ final class PasswordRecoveryViewController: UIViewController {
     }
     
     private func setupSendButton() {
-        sendButton.addTarget(self, action: #selector(showNewPasswordFlow), for: .touchUpInside)
+        sendButton.addTarget(self, action: #selector(sendEmailButtonTapped), for: .touchUpInside)
         
         NSLayoutConstraint.activate([
             sendButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -31),
@@ -77,7 +97,8 @@ final class PasswordRecoveryViewController: UIViewController {
     }
     
     @objc
-    private func showNewPasswordFlow() {
-        coordinator?.showNewPasswordFlow()
+    private func sendEmailButtonTapped() {
+        guard let email = emailTextField.text, !email.isEmpty else { return }
+        viewModel.sendEmailRecoveryLink(email: email)
     }
 }

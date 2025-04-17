@@ -40,7 +40,8 @@ final class AuthCoordinator: Coordinator, AuthCoordinatorProtocol {
     }
     
     func showPasswordRecovery() {
-        let passwordRecoveryViewController = PasswordRecoveryViewController()
+        let passwordRecoveryViewModel = PasswordRecoveryViewModel()
+        let passwordRecoveryViewController = PasswordRecoveryViewController(viewModel: passwordRecoveryViewModel)
         passwordRecoveryViewController.coordinator = self
         navigationController.pushViewController(passwordRecoveryViewController, animated: true)
     }
