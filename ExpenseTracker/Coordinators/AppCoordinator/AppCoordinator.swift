@@ -5,17 +5,20 @@ final class AppCoordinator: Coordinator {
     
     var childCoordinators: [Coordinator] = [] // Массив дочерних координаторов
     var navigationController: UINavigationController
-    private let window: UIWindow
     
-    init(window: UIWindow) {
+    private let window: UIWindow
+    private let isLoggedIn: Bool
+    
+    init(window: UIWindow, isLoggedIn: Bool = false) {
         self.navigationController = UINavigationController()
         self.window = window
+        self.isLoggedIn = isLoggedIn
     }
     
     // Основной метод запуска координатора
     func start() {
         // Проверяем статус авторизации пользователя
-        if UserDefaults.isLoggedIn {
+        if isLoggedIn {
             showMainFlow() // Если пользователь авторизован, показываем основной поток
         } else {
             showAuthFlow() // Если нет, показываем поток авторизации
@@ -53,7 +56,6 @@ extension AppCoordinator: AuthCoordinatorDelegate {
     
     // Метод вызывается при успешной авторизации
     func didFinishAuth() {
-        UserDefaults.isLoggedIn = true
         showMainFlow()
     }
 }

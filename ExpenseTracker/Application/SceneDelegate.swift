@@ -1,4 +1,5 @@
 import UIKit
+import FirebaseAuth
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -7,13 +8,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
-     
-        UserDefaults.isLoggedIn = false
-        
+
+        let isLoggedIn = Auth.auth().currentUser != nil
         let window = UIWindow(windowScene: windowScene)
         self.window = window
             
-        appCoordinator = AppCoordinator(window: window)
+        appCoordinator = AppCoordinator(window: window, isLoggedIn: isLoggedIn)
         appCoordinator?.start()
     }
 }
