@@ -23,7 +23,6 @@ final class AuthViewModel {
             guard let self else { return }
             isLoading.value = false
             if let error = error {
-                isLoginButtonEnabled.value = false
                 errorMessage.value = error.localizedDescription
             } else {
                 isLoggedIn.value = true

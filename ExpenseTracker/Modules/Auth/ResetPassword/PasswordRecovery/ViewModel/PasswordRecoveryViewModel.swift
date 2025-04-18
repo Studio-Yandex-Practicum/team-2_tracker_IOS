@@ -17,7 +17,6 @@ final class PasswordRecoveryViewModel {
         Auth.auth().sendPasswordReset(withEmail: email) { [weak self] error in
             guard let self else { return }
             if error != nil {
-                isLoginButtonEnabled.value = false
             } else {
                 letterWasSent.value = true
             }

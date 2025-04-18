@@ -52,7 +52,6 @@ final class RegistrationViewModel {
             isLoading.value = false
             
             if let error = error {
-                isButtonEnabled.value = false
                 errorMessage.value = error.localizedDescription
             } else {
                 isLoggedIn.value = true
