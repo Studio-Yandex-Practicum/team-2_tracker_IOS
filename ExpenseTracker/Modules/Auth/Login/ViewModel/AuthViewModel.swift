@@ -3,22 +3,42 @@ import FirebaseAuth
 
 final class AuthViewModel {
     
+    // MARK: - Properties
+    
+    private(set) var email: String = ""
+    
     var isLoading: Observable<Bool> = Observable(false)
     var isLoggedIn: Observable<Bool> = Observable(false)
+    var isLoginButtonEnabled: Observable<Bool> = Observable(false)
     var errorMessage: Observable<String?> = Observable(nil)
+    var emailError: Observable<AuthValidator.ValidationError?> = Observable(nil)
+    
+    // MARK: - Public Methods
     
     func login(email: String, password: String) {
         isLoading.value = true
         
-        Auth.auth().signIn(withEmail: email, password: password) { [weak self] result, error in
+        // Метод входа в систему с email и паролем.
+        Auth.auth().signIn(withEmail: email, password: password) { [weak self] _, error in
             guard let self else { return }
-            self.isLoading.value = false
-            
+            isLoading.value = false
             if let error = error {
-                self.errorMessage.value = error.localizedDescription
+                isLoginButtonEnabled.value = false
+                errorMessage.value = error.localizedDescription
             } else {
-                self.isLoggedIn.value = true
+                isLoggedIn.value = true
             }
         }
+    }
+    
+    func updateEmail(_ email: String) {
+        self.email = email
+        validateEmail()
+    }
+    
+    func validateEmail() {
+        let isEmailValid = AuthValidator.isValidEmail(email)
+        emailError.value = isEmailValid ? nil : .invalidEmail
+        isLoginButtonEnabled.value = isEmailValid
     }
 }

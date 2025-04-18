@@ -5,6 +5,7 @@ final class AuthTextField: UITextField {
     // MARK: - Private Properties
     
     private lazy var toggleButton = UIButton(type: .custom)
+    private var isEyeIconHidden: Bool = true
     private let paddingView = UIView(frame: CGRect(
         x: 0,
         y: 0,
@@ -12,7 +13,10 @@ final class AuthTextField: UITextField {
         height: Constants.defaultHeight
     ))
     
-    private var isEyeIconHidden: Bool = true
+    private let textFieldHintLabel: TextFieldHint = {
+        let label = TextFieldHint(hintText: AuthValidator.ValidationError.invalidPassword.rawValue, color: .etSecondaryLabel)
+        return label
+    }()
 
     // MARK: - Init
     
@@ -74,6 +78,7 @@ final class AuthTextField: UITextField {
         leftView = paddingView
         leftViewMode = .always
         textContentType = .oneTimeCode
+        heightAnchor.constraint(equalToConstant: 48).isActive = true
     }
     
     private func setupToggleButton() {

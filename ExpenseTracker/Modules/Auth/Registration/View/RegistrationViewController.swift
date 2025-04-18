@@ -13,19 +13,23 @@ final class RegistrationViewController: UIViewController {
         return stackView
     }()
     
-    private let loginTextField: AuthTextField = {
+    private let loginTextField: AuthTextFieldWithHint = {
         let textField = AuthTextField(placeholder: AuthAction.mail.rawValue)
-        return textField
+        let textFieldHint = AuthTextFieldWithHint(textField: textField)
+        return textFieldHint
     }()
     
-    private let passwordTextField: AuthTextField = {
+    private let passwordTextField: AuthTextFieldWithHint = {
         let textField = AuthTextField(placeholder: AuthAction.password.rawValue, isEyeIconHidden: false)
-        return textField
+        let textFieldHint = AuthTextFieldWithHint(textField: textField)
+        return textFieldHint
     }()
     
-    private let repeatPasswordTextField: AuthTextField = {
+    private let repeatPasswordTextField: AuthTextFieldWithHint = {
         let textField = AuthTextField(placeholder: AuthAction.repeatPassword.rawValue, isEyeIconHidden: false)
-        return textField
+        let hintLabel = TextFieldHint(hintText: AuthValidator.ValidationError.invalidPassword.rawValue)
+        let textFieldHint = AuthTextFieldWithHint(textField: textField, hintLabel: hintLabel, isHintHidden: false)
+        return textFieldHint
     }()
     
     private let footerStackView: UIStackView = {
@@ -67,7 +71,7 @@ final class RegistrationViewController: UIViewController {
     }()
     
     private let registrationButton: MainButton = {
-        let button = MainButton(title: ButtonAction.register.rawValue, backgroundColor: .etInactive)
+        let button = MainButton(title: ButtonAction.register.rawValue)
         return button
     }()
     
@@ -98,6 +102,47 @@ final class RegistrationViewController: UIViewController {
                 coordinator?.completeAuth()
             }
         }
+        
+        registrationViewModel.emailError.bind { [weak self] emailError in
+            guard let self else { return }
+            if let emailError {
+                loginTextField.setErrorHint(with: emailError.rawValue)
+            } else {
+                loginTextField.removeHint()
+            }
+        }
+        
+        registrationViewModel.passwordError.bind { [weak self] passwordError in
+            guard let self else { return }
+            if let passwordError {
+                passwordTextField.setErrorHint(with: passwordError.rawValue)
+            } else {
+                passwordTextField.removeHint()
+            }
+        }
+        
+        registrationViewModel.confirmPasswordError.bind { [weak self] confirmPasswordError in
+            guard let self else { return }
+            if let confirmPasswordError {
+                repeatPasswordTextField.setErrorHint(with: confirmPasswordError.rawValue)
+            } else {
+                repeatPasswordTextField.setupHint(with: AuthValidator.ValidationError.invalidPassword.rawValue)
+            }
+        }
+        
+        registrationViewModel.isButtonEnabled.bind { [weak self] isButtonEnabled in
+            guard let self else { return }
+            registrationButton.isEnabled = isButtonEnabled
+            registrationButton.backgroundColor = isButtonEnabled ? .etAccent : .etInactive
+        }
+        
+        registrationViewModel.errorMessage.bind { [weak self] error in
+            guard let self else { return }
+            
+            if error != nil {
+                loginTextField.setErrorHint(with: AuthValidator.ValidationError.alreadyRegistered.rawValue)
+            }
+        }
     }
     
     private func setupUI() {
@@ -112,6 +157,7 @@ final class RegistrationViewController: UIViewController {
         setupPrivacyPolicyButton()
         setupRegistrationButton()
         setupTapGesture()
+        setupTextFieldTargets()
     }
     
     private func setupNavBar() {
@@ -133,7 +179,7 @@ final class RegistrationViewController: UIViewController {
         [loginTextField, passwordTextField, repeatPasswordTextField]
         .forEach {
             registrationStackView.addArrangedSubview($0)
-            $0.heightAnchor.constraint(equalToConstant: 48).isActive = true
+            $0.translatesAutoresizingMaskIntoConstraints = false
         }
         setupRegistrationStackViewConstraints()
     }
@@ -199,6 +245,50 @@ final class RegistrationViewController: UIViewController {
         view.addGestureRecognizer(tapGesture)
     }
     
+    private func setupTextFieldTargets() {
+        loginTextField.textField.addTarget(self, action: #selector(loginTextFieldEditing), for: .editingChanged)
+        loginTextField.textField.addTarget(self, action: #selector(loginTextFieldDidEndEditing), for: .editingDidEnd)
+        
+        passwordTextField.textField.addTarget(self, action: #selector(passwordTextFieldEditing), for: .editingChanged)
+        passwordTextField.textField.addTarget(self, action: #selector(passwordTextFieldDidEndEditing), for: .editingDidEnd)
+        
+        repeatPasswordTextField.textField.addTarget(self, action: #selector(repeatPasswordTextEditing), for: .editingChanged)
+        repeatPasswordTextField.textField.addTarget(self, action: #selector(repeatPasswordTextDidEndEditing), for: .editingDidEnd)
+    }
+    
+    @objc
+    private func loginTextFieldEditing() {
+        guard let email = loginTextField.textField.text else { return }
+        registrationViewModel.updateEmail(email)
+    }
+    
+    @objc
+    private func loginTextFieldDidEndEditing() {
+        registrationViewModel.validateEmail()
+    }
+    
+    @objc
+    private func passwordTextFieldEditing() {
+        guard let password = passwordTextField.textField.text else { return }
+        registrationViewModel.updatePassword(password)
+    }
+    
+    @objc
+    private func passwordTextFieldDidEndEditing() {
+        registrationViewModel.validatePassword()
+    }
+    
+    @objc
+    private func repeatPasswordTextEditing() {
+        guard let confirmPassword = repeatPasswordTextField.textField.text else { return }
+        registrationViewModel.updateConfirmPassword(confirmPassword)
+    }
+    
+    @objc
+    private func repeatPasswordTextDidEndEditing() {
+        registrationViewModel.doPasswordsMatch()
+    }
+    
     @objc
     private func showAuthFlow() {
         coordinator?.dismissCurrentFlow()
@@ -206,16 +296,7 @@ final class RegistrationViewController: UIViewController {
     
     @objc
     private func signIn() {
-        guard
-            let email = loginTextField.text, !email.isEmpty,
-            let password = passwordTextField.text, !password.isEmpty,
-            let confirmPassword = repeatPasswordTextField.text,
-                !confirmPassword.isEmpty, password == confirmPassword
-        else {
-            // обработать ошибки
-            return
-        }
-        registrationViewModel.register(email: email, password: password)
+        registrationViewModel.register()
     }
     
     @objc
@@ -226,6 +307,7 @@ final class RegistrationViewController: UIViewController {
     @objc
     private func checkBoxButtonTapped() {
         checkBoxButton.isSelected.toggle()
+        registrationViewModel.updateSelectedPolicyPrivacy(checkBoxButton.isSelected)
         
         if checkBoxButton.isSelected {
             checkBoxButton.setImage(UIImage(named: Asset.Icon.checkboxPressed.rawValue), for: .normal)

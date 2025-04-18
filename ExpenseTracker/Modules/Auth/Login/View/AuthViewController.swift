@@ -21,9 +21,10 @@ final class AuthViewController: UIViewController {
         return label
     }()
     
-    private let loginTextField: AuthTextField = {
+    private let loginTextField: AuthTextFieldWithHint = {
         let textField = AuthTextField(placeholder: AuthAction.mail.rawValue)
-        return textField
+        let textFieldWithHint = AuthTextFieldWithHint(textField: textField, hintLabel: TextFieldHint(hintText: ""))
+        return textFieldWithHint
     }()
     
     private let passwordTextField: AuthTextField = {
@@ -89,10 +90,32 @@ final class AuthViewController: UIViewController {
             self.loginButton.isEnabled = !isLoading
         }
         
+        authViewModel.isLoginButtonEnabled.bind { [weak self] isButtonEnabled in
+            guard let self else { return }
+            loginButton.isEnabled = isButtonEnabled
+            loginButton.backgroundColor = isButtonEnabled ? .etAccent : .etInactive
+        }
+        
+        authViewModel.emailError.bind { [weak self] emailError in
+            guard let self else { return }
+            if let emailError {
+                loginTextField.setErrorHint(with: emailError.rawValue)
+            } else {
+                loginTextField.removeHint()
+            }
+        }
+        
         authViewModel.isLoggedIn.bind { [weak self] isLoggedIn in
             guard let self else { return }
             if isLoggedIn {
                 coordinator?.completeAuth()
+            }
+        }
+        
+        authViewModel.errorMessage.bind { [weak self] error in
+            guard let self else { return }
+            if error != nil {
+                self.loginTextField.setErrorHint(with: AuthValidator.ValidationError.authFailed.rawValue)
             }
         }
     }
@@ -118,8 +141,6 @@ final class AuthViewController: UIViewController {
             authStackView.addArrangedSubview($0)
             if $0 == forgotPasswordButton {
                 $0.heightAnchor.constraint(equalToConstant: 28).isActive = true
-            } else {
-                $0.heightAnchor.constraint(equalToConstant: 48).isActive = true
             }
         }
         setupAuthStackViewConstraints()
@@ -149,8 +170,10 @@ final class AuthViewController: UIViewController {
     }
     
     private func setupButtonTargets() {
-        forgotPasswordButton.addTarget(self, action: #selector(showPasswordRecover), for: .touchUpInside)
+        loginTextField.textField.addTarget(self, action: #selector(loginTextFieldIsEditing), for: .editingChanged)
         loginButton.addTarget(self, action: #selector(signIn), for: .touchUpInside)
+        
+        forgotPasswordButton.addTarget(self, action: #selector(showPasswordRecover), for: .touchUpInside)
         footerButton.addTarget(self, action: #selector(showRegistrationView), for: .touchUpInside)
     }
     
@@ -166,9 +189,15 @@ final class AuthViewController: UIViewController {
     }
     
     @objc
+    private func loginTextFieldIsEditing() {
+        guard let email = loginTextField.textField.text else { return }
+        authViewModel.updateEmail(email)
+    }
+    
+    @objc
     private func signIn() {
         guard
-            let email = loginTextField.text, !email.isEmpty,
+            let email = loginTextField.textField.text, !email.isEmpty,
             let password = passwordTextField.text, !password.isEmpty
         else { return }
         authViewModel.login(email: email, password: password)

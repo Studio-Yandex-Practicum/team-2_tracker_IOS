@@ -12,8 +12,4 @@ extension Coordinator {
     func addChild(_ coordinator: Coordinator) {
         childCoordinators.append(coordinator)
     }
-    
-    func removeChild(_ coordinator: Coordinator) {
-        childCoordinators = childCoordinators.filter { $0 !== coordinator }
-    }
 }
