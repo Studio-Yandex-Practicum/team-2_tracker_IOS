@@ -37,7 +37,7 @@ final class MainTabBarController: UITabBarController {
         
         let appearance = UITabBarAppearance()
         appearance.configureWithOpaqueBackground()
-        appearance.backgroundColor = .etBackground
+        appearance.backgroundColor = .etCardsToggled
         tabBar.standardAppearance = appearance
         tabBar.scrollEdgeAppearance = appearance
     }

@@ -43,7 +43,7 @@ final class PrivacyPolicyViewController: UIViewController {
     
     private func setupNavBar() {
         navigationController?.setNavigationBarHidden(true, animated: false)
-        customNavigationBar = setupCustomNavBar(title: .privacyPolicy, isPolicyPrivacyFlow: true, backAction: #selector(showRegistrationFlow))
+        customNavigationBar = setupCustomNavBar(title: AuthAction.privacyPolicy.rawValue, isPolicyPrivacyFlow: true, backAction: #selector(showRegistrationFlow))
     }
     
     private func setupScrollView() {

@@ -69,7 +69,7 @@ final class PasswordRecoveryViewController: UIViewController {
     
     private func setupNavBar() {
         navigationController?.setNavigationBarHidden(true, animated: false)
-        customNavigationBar = setupCustomNavBar(title: .passwordRecovery, backAction: #selector(showAuthFlow))
+        customNavigationBar = setupCustomNavBar(title: AuthAction.passwordRecovery.rawValue, backAction: #selector(showAuthFlow))
     }
     
     private func setupViews() {
@@ -98,16 +98,6 @@ final class PasswordRecoveryViewController: UIViewController {
             sendButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             sendButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
-    }
-    
-    private func setupTapGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        view.addGestureRecognizer(tapGesture)
-    }
-    
-    @objc
-    private func dismissKeyboard() {
-        view.endEditing(true)
     }
     
     @objc

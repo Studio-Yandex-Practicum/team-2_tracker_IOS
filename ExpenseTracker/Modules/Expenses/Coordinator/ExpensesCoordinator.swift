@@ -22,6 +22,28 @@ final class ExpensesCoordinator: Coordinator {
         expensesViewController.coordinator = self
         navigationController.setViewControllers([expensesViewController], animated: true)
     }
+    
+    func showCategorySelectionFlow() {
+        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: true)
+        categorySelectionController.coordinator = self
+        categorySelectionController.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(categorySelectionController, animated: true)
+    }
+    
+    func showNewCategoryFlow() {
+        let newCategoryController = NewCategoryViewController()
+        newCategoryController.coordinator = self
+        newCategoryController.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(newCategoryController, animated: true)
+    }
+    
+    func dismissCurrentFlow() {
+        navigationController.popViewController(animated: true)
+    }
+    
+    func dismissAllFlows() {
+        navigationController.popToRootViewController(animated: true)
+    }
 }
 
 extension ExpensesCoordinator: TabCoordinator {

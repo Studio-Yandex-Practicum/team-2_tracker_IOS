@@ -83,18 +83,8 @@ final class NewPasswordViewController: UIViewController {
         backToAuthButton.addTarget(self, action: #selector(showAuth), for: .touchUpInside)
     }
     
-    private func setupTapGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        view.addGestureRecognizer(tapGesture)
-    }
-    
     @objc
     private func showAuth() {
         coordinator?.dismissAllFlows()
-    }
-    
-    @objc
-    private func dismissKeyboard() {
-        view.endEditing(true)
     }
 }

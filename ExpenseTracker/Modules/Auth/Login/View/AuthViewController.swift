@@ -177,12 +177,6 @@ final class AuthViewController: UIViewController {
         footerButton.addTarget(self, action: #selector(showRegistrationView), for: .touchUpInside)
     }
     
-    // Возможность скрывать клавиатуру по тапу в область не предназначенную для ввода
-    private func setupTapGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        view.addGestureRecognizer(tapGesture)
-    }
-    
     @objc
     private func showPasswordRecover() {
         coordinator?.showPasswordRecovery()
@@ -206,10 +200,5 @@ final class AuthViewController: UIViewController {
     @objc
     private func showRegistrationView() {
         coordinator?.showRegistration()
-    }
-    
-    @objc
-    private func dismissKeyboard() {
-        view.endEditing(true)
     }
 }

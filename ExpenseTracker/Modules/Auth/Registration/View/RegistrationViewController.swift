@@ -164,7 +164,7 @@ final class RegistrationViewController: UIViewController {
         navigationController?.setNavigationBarHidden(true, animated: false)
         
         // Расширение UIViewController+setupCustomNavBar для кастомной навигации
-        customNavigationBar = setupCustomNavBar(title: .registration, backAction: #selector(showAuthFlow))
+        customNavigationBar = setupCustomNavBar(title: AuthAction.registration.rawValue, backAction: #selector(showAuthFlow))
     }
     
     private func setupViews() {
@@ -240,11 +240,6 @@ final class RegistrationViewController: UIViewController {
         ])
     }
     
-    private func setupTapGesture() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
-        view.addGestureRecognizer(tapGesture)
-    }
-    
     private func setupTextFieldTargets() {
         loginTextField.textField.addTarget(self, action: #selector(loginTextFieldEditing), for: .editingChanged)
         loginTextField.textField.addTarget(self, action: #selector(loginTextFieldDidEndEditing), for: .editingDidEnd)
@@ -297,11 +292,6 @@ final class RegistrationViewController: UIViewController {
     @objc
     private func signIn() {
         registrationViewModel.register()
-    }
-    
-    @objc
-    private func dismissKeyboard() {
-        view.endEditing(true)
     }
     
     @objc

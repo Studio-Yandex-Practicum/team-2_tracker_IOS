@@ -24,8 +24,8 @@ final class MainTabBarCoordinator: Coordinator {
     /// Основной метод запуска координатора
     func start() {
         let coordinators: [TabCoordinator] = [
-            AnalyticsCoordinator(),    // Координатор для аналитики
             ExpensesCoordinator(),     // Координатор для расходов
+            AnalyticsCoordinator(),    // Координатор для аналитики
             SettingsCoordinator()      // Координатор для настроек
         ]
         

@@ -35,7 +35,6 @@ final class AppCoordinator: Coordinator {
         let mainCoordinator = MainTabBarCoordinator(tabBarController: tabBarController)
         addChild(mainCoordinator)
         mainCoordinator.start()
-        tabBarController.selectedIndex = 1 // По умолчанию сперва будет показан экран расходов
     }
     
     // Показывает поток авторизации
