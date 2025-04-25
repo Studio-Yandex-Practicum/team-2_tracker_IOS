@@ -12,6 +12,8 @@ enum ButtonAction: String {
     // General
     case send = "Отправить"
     case confirm = "Подтвердить"
+    case save = "Сохранить"
+    case set = "Применить"
     
     // Registration
     case privacyPolicy = "Политикой конфиденциальности и обработки персональных данных"

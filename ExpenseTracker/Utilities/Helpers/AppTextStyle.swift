@@ -53,8 +53,7 @@ enum AppTextStyle {
         switch self {
         case .largeTitle: return 32
         case .h1: return 28
-        case .h2, .body: return 24
-        case .button: return 24
+        case .h2, .body, .button: return 24
         case .caption, .tag: return 20
         case .numbers: return 38
         }

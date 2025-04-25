@@ -4,12 +4,12 @@ extension UIViewController {
     
     // Создание кастомного навигационного бара
     func setupCustomNavBar(
-        title: AuthAction,
+        title: String,
         isPolicyPrivacyFlow: Bool = false,
         backAction: Selector
     ) -> CustomBackBarItem {
         let navBar = CustomBackBarItem(
-            title: title.rawValue,
+            title: title,
             isPolicyPrivacyFlow: isPolicyPrivacyFlow,
             target: self,
             action: backAction
@@ -18,7 +18,7 @@ extension UIViewController {
 
         NSLayoutConstraint.activate([
             navBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
-            navBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),
+            navBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 4),
             navBar.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
         return navBar

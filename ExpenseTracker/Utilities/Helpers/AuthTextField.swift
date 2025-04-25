@@ -62,7 +62,7 @@ final class AuthTextField: UITextField {
                                 titleColor: UIColor,
                                 borderColor: UIColor,
                                 borderWidth: CGFloat) {
-        self.attributedPlaceholder = NSAttributedString(
+        attributedPlaceholder = NSAttributedString(
             string: placeholder,
             attributes: [.foregroundColor: UIColor.etSecondaryLabel]
         )

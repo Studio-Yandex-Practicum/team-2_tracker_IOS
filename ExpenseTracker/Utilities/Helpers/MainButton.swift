@@ -13,6 +13,7 @@ final class MainButton: UIButton {
         
         super.init(frame: .zero)
         
+        isEnabled = false
         setTitle(title, for: .normal)
         self.backgroundColor = backgroundColor
         setTitleColor(titleColor, for: .normal)
