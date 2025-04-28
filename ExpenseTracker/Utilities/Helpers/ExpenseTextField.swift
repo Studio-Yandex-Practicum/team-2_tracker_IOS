@@ -1,6 +1,6 @@
 import UIKit
 
-final class AuthTextField: UITextField {
+final class ExpenseTextField: UITextField {
     
     // MARK: - Private Properties
     
@@ -11,21 +11,21 @@ final class AuthTextField: UITextField {
         width: Constants.paddingWidth,
         height: Constants.defaultHeight
     ))
-    
-    private var isEyeIconHidden: Bool = true
+
+//    private var isIconHidden: Bool = true
 
     // MARK: - Init
     
     init(placeholder: String,
-         isEyeIconHidden: Bool = true,
+   //      isEyeIconHidden: Bool = true,
          backgroundColor: UIColor = .etCardsToggled,
-         titleColor: UIColor = .etCards, 
+         titleColor: UIColor = .etCards,
          cornerRadius: CGFloat = Constants.defaultCornerRadius,
          borderColor: UIColor = .clear,
          borderWidth: CGFloat = 1) {
         
         super.init(frame: .zero)
-        self.isEyeIconHidden = isEyeIconHidden
+//        self.isIconHidden = isEyeIconHidden
         
         setupTextField(placeholder: placeholder,
                        backgroundColor: backgroundColor,
@@ -33,11 +33,11 @@ final class AuthTextField: UITextField {
                        borderColor: borderColor,
                        borderWidth: borderWidth)
         
-        if !isEyeIconHidden {
-            setupToggleButton()
-        }
+//        if !isEyeIconHidden {
+//            setupToggleButton(name: String)
+//        }
         
-        delegate = self
+//        delegate = self
     }
 
     required init?(coder: NSCoder) {
@@ -46,7 +46,7 @@ final class AuthTextField: UITextField {
 
     // MARK: - Setup Methods
     
-    private func setupTextField(placeholder: String,
+     func setupTextField(placeholder: String,
                                 backgroundColor: UIColor,
                                 titleColor: UIColor,
                                 borderColor: UIColor,
@@ -68,10 +68,10 @@ final class AuthTextField: UITextField {
         self.leftViewMode = .always
     }
     
-    private func setupToggleButton() {
+    func setupToggleButton(_ name: String) {
         isSecureTextEntry = true
         
-        let eyeImage = UIImage(named: Asset.Icon.eyeOff.rawValue)?.withTintColor(.etPrimaryLabel)
+        let eyeImage = UIImage(named: name)?.withTintColor(.etPrimaryLabel)
         toggleButton.setImage(eyeImage, for: .normal)
         toggleButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
         
@@ -86,24 +86,24 @@ final class AuthTextField: UITextField {
     
     @objc
     private func togglePasswordVisibility() {
-        let imageName = isSecureTextEntry ? Asset.Icon.eyeOn.rawValue : Asset.Icon.eyeOff.rawValue
-        let image = UIImage(named: imageName)?.withTintColor(.etPrimaryLabel)
-        toggleButton.setImage(image, for: .normal)
-        isSecureTextEntry.toggle()
+//        let imageName = isSecureTextEntry ? Asset.Icon.eyeOn.rawValue : Asset.Icon.eyeOff.rawValue
+//        let image = UIImage(named: imageName)?.withTintColor(.etPrimaryLabel)
+//        toggleButton.setImage(image, for: .normal)
+//        isSecureTextEntry.toggle()
     }
 }
 
 // MARK: - UITextFieldDelegate
 
-extension AuthTextField: UITextFieldDelegate {
-    func textFieldDidBeginEditing(_ textField: UITextField) {
-        layer.borderColor = UIColor.etAccent.cgColor
-    }
-    
-    func textFieldDidEndEditing(_ textField: UITextField) {
-        layer.borderColor = UIColor.clear.cgColor
-    }
-}
+//extension AuthTextField: UITextFieldDelegate {
+//    private func textFieldDidBeginEditing(_ textField: UITextField) {
+//        layer.borderColor = UIColor.etAccent.cgColor
+//    }
+//    
+//    private func textFieldDidEndEditing(_ textField: UITextField) {
+//        layer.borderColor = UIColor.clear.cgColor
+//    }
+//}
 
 // MARK: - Constants
 

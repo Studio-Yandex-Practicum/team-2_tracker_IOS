@@ -8,6 +8,7 @@ final class ExpensesCoordinator: Coordinator {
     var childCoordinators: [Coordinator] = []
     var navigationController: UINavigationController
     
+    
     // MARK: - Initialization
     
     init() {

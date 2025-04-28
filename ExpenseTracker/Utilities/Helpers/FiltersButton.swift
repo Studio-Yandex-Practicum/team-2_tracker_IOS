@@ -9,7 +9,6 @@ final class FiltersButton: UIButton {
          textStyle: UIFont.TextStyle = .body,
          imagePadding: Int = 10,
          image: UIImage) {
-        
         super.init(frame: .zero)
         setTitle(title, for: .normal)
         self.backgroundColor = backgroundColor
