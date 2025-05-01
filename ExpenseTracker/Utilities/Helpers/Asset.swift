@@ -19,6 +19,7 @@ enum Asset {
         
         // General
         case btnAdd = "btn-add"
+        case btnAdd2 = "btn-add2"
         case calendar = "calendar"
         case chart = "chart"
         case checkboxDefault = "checkbox-default"

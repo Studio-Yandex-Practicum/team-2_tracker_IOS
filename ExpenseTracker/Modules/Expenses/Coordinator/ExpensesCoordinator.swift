@@ -23,8 +23,22 @@ final class ExpensesCoordinator: Coordinator {
         navigationController.setViewControllers([expensesViewController], animated: true)
     }
     
+    func showAddExpenseFlow() {
+        let addExpenseViewController = ChangeExpensesViewController(.add)
+        addExpenseViewController.coordinator = self
+        addExpenseViewController.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(addExpenseViewController, animated: true)
+    }
+    
     func showCategorySelectionFlow() {
         let categorySelectionController = CategorySelectionViewController(isSelectionFlow: true)
+        categorySelectionController.coordinator = self
+        categorySelectionController.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(categorySelectionController, animated: true)
+    }
+    
+    func showCategoryFiltersFlow() {
+        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: false)
         categorySelectionController.coordinator = self
         categorySelectionController.hidesBottomBarWhenPushed = true
         navigationController.pushViewController(categorySelectionController, animated: true)

@@ -17,8 +17,7 @@ final class NewCategoryViewController: UIViewController {
     }()
 
     private let newCategoryTextField: MainTextField = {
-        let textField = MainTextField()
-        textField.placeholder = CategoryLabel.categoryName.rawValue
+        let textField = MainTextField(placeholder: CategoryLabel.categoryName.rawValue)
         return textField
     }()
 

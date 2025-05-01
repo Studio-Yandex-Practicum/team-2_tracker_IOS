@@ -9,8 +9,8 @@ final class FiltersButton: UIButton {
          textStyle: UIFont.TextStyle = .body,
          imagePadding: Int = 10,
          image: UIImage) {
-        
         super.init(frame: .zero)
+        tintColor = .etAccent
         setTitle(title, for: .normal)
         self.backgroundColor = backgroundColor
         setTitleColor(titleColor, for: .normal)

@@ -23,7 +23,7 @@ final class AuthTextField: UITextField {
     init(placeholder: String,
          isEyeIconHidden: Bool = true,
          backgroundColor: UIColor = .etCardsToggled,
-         titleColor: UIColor = .etCards,
+         titleColor: UIColor = .etCards, 
          cornerRadius: CGFloat = Constants.defaultCornerRadius,
          borderColor: UIColor = .clear,
          borderWidth: CGFloat = 1) {

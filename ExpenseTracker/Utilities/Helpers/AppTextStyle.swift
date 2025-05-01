@@ -27,7 +27,7 @@ enum AppTextStyle {
             fontName = "Manrope-SemiBold"
             size = 20
         case .h2:
-            fontName = "Manrope-Medium"
+            fontName = "Manrope-SemiBold"
             size = 16
         case .caption:
             fontName = "Manrope-Regular"

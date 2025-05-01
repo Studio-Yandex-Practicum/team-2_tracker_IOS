@@ -16,7 +16,7 @@ final class TimeButton: UIButton {
         self.backgroundColor = backgroundColor
         setTitleColor(titleColor, for: .normal)
         layer.cornerRadius = cornerRadius
-        titleLabel?.applyTextStyle(style, textStyle: textStyle)
+        titleLabel?.applyTextStyle(.tag, textStyle: textStyle)
         titleLabel?.numberOfLines = 1
         titleLabel?.textAlignment = .center
         translatesAutoresizingMaskIntoConstraints = false

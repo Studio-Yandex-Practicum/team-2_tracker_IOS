@@ -116,6 +116,7 @@ final class CategorySelectionViewController: UIViewController {
     private func setupCategoryTableViewButton() {
         if isSelectionFlow {
             categoryTableViewButton.addTargetToIcon(self, action: #selector(showNewCategoryFlow), for: .touchUpInside)
+            categoryTableViewButton.addTarget(self, action: #selector(showNewCategoryFlow), for: .touchUpInside)
         } else {
             categoryTableViewButton.addTarget(self, action: #selector(selectAllCategories), for: .touchUpInside)
         }
@@ -143,7 +144,7 @@ final class CategorySelectionViewController: UIViewController {
     private func showAddExpenseFlow() {
         coordinator?.dismissCurrentFlow()
     }
-    
+
     @objc
     private func showNewCategoryFlow() {
         coordinator?.showNewCategoryFlow()

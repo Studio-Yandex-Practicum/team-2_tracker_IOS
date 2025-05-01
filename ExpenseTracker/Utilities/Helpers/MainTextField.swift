@@ -22,10 +22,11 @@ final class MainTextField: UITextField {
     
     // MARK: - Init
     
-    init() {
+    init(placeholder: String? = nil) {
         super.init(frame: .zero)
         
         delegate = self
+        setupPlaceholder(with: placeholder)
         setupUI()
     }
     
@@ -63,10 +64,10 @@ final class MainTextField: UITextField {
         translatesAutoresizingMaskIntoConstraints = false
     }
     
-    private func setupPlaceholder() {
+    private func setupPlaceholder(with placeholder: String? = nil) {
         attributedPlaceholder = NSAttributedString(
             string: placeholder ?? "",
-            attributes: [.foregroundColor: UIColor.etSecondaryLabel]
+            attributes: [.foregroundColor: UIColor.secondaryLabel]
         )
     }
     
