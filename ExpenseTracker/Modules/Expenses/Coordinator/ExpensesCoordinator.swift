@@ -40,6 +40,7 @@ final class ExpensesCoordinator: Coordinator {
     func showCategoryFiltersFlow() {
         let categorySelectionController = CategorySelectionViewController(isSelectionFlow: false)
         categorySelectionController.coordinator = self
+        categorySelectionController.delegate = navigationController.viewControllers.last as? CategorySelectionDelegate
         categorySelectionController.hidesBottomBarWhenPushed = true
         navigationController.pushViewController(categorySelectionController, animated: true)
     }

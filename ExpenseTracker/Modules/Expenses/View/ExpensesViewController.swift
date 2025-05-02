@@ -11,6 +11,7 @@ final class ExpensesViewController: UIViewController {
     var dayToday = Date(timeIntervalSinceNow: 0)
     
     private var expensesByDate: [Date: [Expense]] = [:]
+    private var selectedCategories: Set<String>?
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -184,6 +185,65 @@ final class ExpensesViewController: UIViewController {
         coordinator?.showCategoryFiltersFlow()
     }
     
+    private func filterExpenses() {
+        var filteredExpenses: [Expense]
+        
+        // Получаем расходы в зависимости от выбранного периода
+        if let periodType = getSelectedPeriodType() {
+            let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
+            let expensesByDate = viewModel.getExpensesForPeriod(startDate: startDate, endDate: endDate)
+            filteredExpenses = expensesByDate.values.flatMap { $0 }
+        } else {
+            filteredExpenses = viewModel.getAllExpenses()
+        }
+        
+        // Фильтрация по категориям
+        if let selectedCategories = selectedCategories, !selectedCategories.isEmpty {
+            filteredExpenses = filteredExpenses.filter { expense in
+                selectedCategories.contains(expense.category.description)
+            }
+        }
+        
+        // Группируем расходы по датам
+        expensesByDate = Dictionary(grouping: filteredExpenses) { expense in
+            Calendar.current.startOfDay(for: expense.date)
+        }
+        
+        // Обновляем общую сумму
+        totalAmount = filteredExpenses.reduce(0, { $0 + $1.expense })
+        
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
+        numberFormatter.groupingSeparator = " "
+        numberFormatter.decimalSeparator = ","
+        
+        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+            labelMoney.text = formattedAmount + " " + currency
+        }
+        
+        // Обновляем отображение даты
+        if let periodType = getSelectedPeriodType() {
+            let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
+            let textForCurrentDate = dateFormatter.string(from: startDate)
+            let startOfCurrentDay = Calendar.current.startOfDay(for: dayToday)
+            dateLabel.text = startOfCurrentDay == startDate ? textForCurrentDate : dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
+        } else {
+            dateLabel.text = "Расходы"
+        }
+        
+        expenseMoneyTable.reloadData()
+    }
+    
+    private func getSelectedPeriodType() -> PeriodType? {
+        if dayButton.isSelected { return .day }
+        if weekButton.isSelected { return .week }
+        if monthButton.isSelected { return .month }
+        if yearButton.isSelected { return .year }
+        return nil
+    }
+    
     func addSubviews() {
         expenseMoneyTable.delegate = self
         expenseMoneyTable.dataSource = self
@@ -257,14 +317,43 @@ final class ExpensesViewController: UIViewController {
             let (startDate, endDate) = calculatePeriod(for: selectedDate, periodType: periodType)
             expensesByDate = viewModel.getExpensesForPeriod(startDate: startDate, endDate: endDate)
             
-            labelMoney.text = totalAmount.formattedAsRuble()
+            // Подсчитываем общую сумму для выбранного периода
+            let allExpenses = expensesByDate.values.flatMap { $0 }
+            totalAmount = allExpenses.reduce(0) { $0 + $1.expense }
+            
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.minimumFractionDigits = 2
+            numberFormatter.maximumFractionDigits = 2
+            numberFormatter.groupingSeparator = " "
+            numberFormatter.decimalSeparator = ","
+            
+            if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+                labelMoney.text = formattedAmount + " " + currency
+            }
+            
             let textForCurrentDate = dateFormatter.string(from: startDate)
             let startOfCurrentDay = Calendar.current.startOfDay(for: selectedDate)
             dateLabel.text = startOfCurrentDay == startDate ? textForCurrentDate : dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
             dateLabel.applyTextStyle(.h2, textStyle: .caption2)
         } else {
             expensesByDate = viewModel.getAllExpensesByDate()
-            labelMoney.text = totalAmount.formattedAsRuble()
+            
+            // Подсчитываем общую сумму для всех расходов
+            let allExpenses = expensesByDate.values.flatMap { $0 }
+            totalAmount = allExpenses.reduce(0) { $0 + $1.expense }
+            
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.minimumFractionDigits = 2
+            numberFormatter.maximumFractionDigits = 2
+            numberFormatter.groupingSeparator = " "
+            numberFormatter.decimalSeparator = ","
+            
+            if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+                labelMoney.text = formattedAmount + " " + currency
+            }
+            
             dateLabel.text = "Расходы"
             dateLabel.applyTextStyle(.h2, textStyle: .caption2)
         }
@@ -301,14 +390,12 @@ final class ExpensesViewController: UIViewController {
 // MARK: - TableView Functhion
 extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
-    
     func numberOfSections(in tableView: UITableView) -> Int {
         return expensesByDate.count
-      
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        var dateKeys = Array(expensesByDate.keys)
+        let dateKeys = Array(expensesByDate.keys)
         let dateKey = dateKeys.sorted(by: >)
         return expensesByDate[dateKey[section]]?.count ?? 0
     }
@@ -329,14 +416,12 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
                 cell.noteMoney.text = expense.expense.formatted()
             }
             return cell
-            
         } else {
             // Обработка случая, когда не удалось произвести преобразование
             print("Failed to dequeue a cell of type ExpensesTableCell")
             return UITableViewCell()
         }
     }
-    
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 60
@@ -383,19 +468,19 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
     // Закругление углов секции таблицы
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        
         let cornerRadius = 12
         var corners: UIRectCorner = []
-        if indexPath.row == 0
-        {
+        
+        if indexPath.row == 0 {
             corners.update(with: .topLeft)
             corners.update(with: .topRight)
         }
-        if indexPath.row == tableView.numberOfRows(inSection: indexPath.section) - 1
-        {
+        
+        if indexPath.row == tableView.numberOfRows(inSection: indexPath.section) - 1 {
             corners.update(with: .bottomLeft)
             corners.update(with: .bottomRight)
         }
+        
         let maskLayer = CAShapeLayer()
         maskLayer.path = UIBezierPath(roundedRect: cell.bounds,
                                       byRoundingCorners: corners,
@@ -403,7 +488,7 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         cell.layer.mask = maskLayer
     }
     
-    //MARK: - Headers
+    // MARK: - Headers
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let dateFormatter = DateFormatter()
@@ -428,5 +513,13 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
         16
+    }
+}
+
+// MARK: - CategorySelectionDelegate
+extension ExpensesViewController: CategorySelectionDelegate {
+    func didSelectCategories(_ categories: Set<String>) {
+        selectedCategories = categories
+        filterExpenses()
     }
 }

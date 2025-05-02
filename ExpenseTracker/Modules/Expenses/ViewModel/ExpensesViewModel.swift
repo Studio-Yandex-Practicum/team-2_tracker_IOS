@@ -4,12 +4,16 @@ final class ExpensesViewModel {
     
     private var expenses: [Expense] = expensesMockData
     
-    var totalAmount: Double {
+    var totalAmount: Decimal {
         return expenses.reduce(0) { $0 + $1.expense }
     }
     
     func addExpense(expense: Expense) {
         expenses.append(expense)
+    }
+    
+    func getAllExpenses() -> [Expense] {
+        return expenses
     }
     
     func getAllExpensesByDate() -> [Date: [Expense]] {

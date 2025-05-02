@@ -1,16 +1,22 @@
 import UIKit
 
+protocol CategorySelectionDelegate: AnyObject {
+    func didSelectCategories(_ categories: Set<String>)
+}
+
 final class CategorySelectionViewController: UIViewController {
     
     // MARK: - Private Properties
     
     weak var coordinator: ExpensesCoordinator?
-    
+    weak var delegate: CategorySelectionDelegate?
     private var isSelectionFlow: Bool
     private var customNavigationBar: CustomBackBarItem?
     private var isAllCategoriesSelected: Bool = false
     private var selectedIndexPath: IndexPath?
     private let categories: [CategoryMain] = CategoryProvider.baseCategories
+    private var filteredCategories: [CategoryMain] = []
+    private var selectedCategories: Set<String> = []
     
     // MARK: - UI Elements
     
@@ -22,6 +28,8 @@ final class CategorySelectionViewController: UIViewController {
     
     private lazy var categoryTableViewButton: CategoryTableViewButton = {
         let button = isSelectionFlow ? CategoryTableViewButton(title: CategoryLabel.createCategory.rawValue, isShownButton: isSelectionFlow) : CategoryTableViewButton(title: CategoryLabel.allCategories.rawValue, isShownButton: isSelectionFlow)
+        button.layer.cornerRadius = 12
+        button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         return button
     }()
     
@@ -33,13 +41,18 @@ final class CategorySelectionViewController: UIViewController {
         tableView.layer.cornerRadius = 12
         tableView.separatorStyle = .none
         tableView.backgroundColor = .etBackground
-        tableView.contentInset = UIEdgeInsets(top: 48, left: 0, bottom: 0, right: 0)
+        tableView.contentInset = UIEdgeInsets(top: 26, left: 0, bottom: 0, right: 0)
         tableView.allowsMultipleSelection = !isSelectionFlow
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
     
-    private let setButton: MainButton = MainButton(title: ButtonAction.set.rawValue)
+    private let setButton: MainButton = {
+        let button = MainButton(title: ButtonAction.set.rawValue)
+        button.isEnabled = false
+        button.backgroundColor = .etInactive
+        return button
+    }()
     
     // MARK: - Init
     
@@ -62,12 +75,16 @@ final class CategorySelectionViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        filteredCategories = categories
+        setupSetButton()
     }
     
     // MARK: - Private Methods
     
     private func setupUI() {
         view.backgroundColor = .etBackground
+        categorySearchBar.delegate = self
+        
         setupNavBar()
         setupCategorySearchBar()
         setupViews()
@@ -130,14 +147,25 @@ final class CategorySelectionViewController: UIViewController {
     private func reloadCells() {
         for case let cell as CategorySelectionCell in categoryTableViewController.visibleCells {
             guard let indexPath = categoryTableViewController.indexPath(for: cell) else { continue }
-            let model = categories[indexPath.row]
-            cell.configure(
-                with: model
-            )
+            
+            let isFirst = indexPath.row == 0
+            let isLast = indexPath.row == filteredCategories.count - 1
+            cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
+            
             if indexPath.row == categories.count - 1 {
-                cell.setupLastCell()
+                cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
             }
         }
+    }
+    
+    private func setupSetButton() {
+        setButton.addTarget(self, action: #selector(setButtonTapped), for: .touchUpInside)
+    }
+    
+    private func updateSetButtonState() {
+        let hasSelectedCategories = !selectedCategories.isEmpty
+        setButton.isEnabled = hasSelectedCategories
+        setButton.backgroundColor = hasSelectedCategories ? .etAccent : .etInactive
     }
     
     @objc
@@ -151,40 +179,73 @@ final class CategorySelectionViewController: UIViewController {
     }
     
     @objc
+    private func setButtonTapped() {
+        delegate?.didSelectCategories(selectedCategories)
+        coordinator?.dismissCurrentFlow()
+    }
+    
+    @objc
     private func selectAllCategories() {
         isAllCategoriesSelected.toggle()
         
         for row in categories.indices {
             let indexPath = IndexPath(row: row, section: 0)
+            let category = categories[row]
             
             if isAllCategoriesSelected {
                 categoryTableViewController.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+                selectedCategories.insert(category.title)
                 updateCellSelection(at: indexPath, isSelected: true)
             } else {
                 categoryTableViewController.deselectRow(at: indexPath, animated: false)
+                selectedCategories.remove(category.title)
                 updateCellSelection(at: indexPath, isSelected: false)
             }
         }
+        updateSetButtonState()
     }
 }
+
+// MARK: - UISearchBarDelegate
+
+extension CategorySelectionViewController: UISearchBarDelegate {
+    
+    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+        if searchText.isEmpty {
+            filteredCategories = categories
+        } else {
+            filteredCategories = categories.filter { $0.title.lowercased().contains(searchText.lowercased()) }
+        }
+        categoryTableViewButton.isHidden = filteredCategories.isEmpty
+        categoryTableViewController.reloadData()
+    }
+    
+    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+        searchBar.resignFirstResponder()
+    }
+}
+
+// MARK: - UITableViewDelegate & UITableViewDataSource
 
 extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataSource {
     
     // MARK: - UITableView DataSource
     
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        categories.count
+        filteredCategories.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: CategorySelectionCell.reuseIdentifier, for: indexPath) as? CategorySelectionCell else {
             return UITableViewCell()
         }
-        cell.configure(with: categories[indexPath.row])
-        
-        if indexPath.row == categories.count - 1 {
-            cell.setupLastCell()
-        }
+        let isFirst = indexPath.row == 0
+        let isLast = indexPath.row == filteredCategories.count - 1
+        cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
         return cell
     }
     
@@ -194,7 +255,25 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
         return 48
     }
     
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 0
+    }
+    
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return 0
+    }
+    
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        return nil
+    }
+    
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        return nil
+    }
+    
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let category = filteredCategories[indexPath.row]
+        selectedCategories.insert(category.title)
         updateCellSelection(at: indexPath, isSelected: true)
         
         if isSelectionFlow {
@@ -203,17 +282,22 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
             }
             selectedIndexPath = indexPath
         }
+        updateSetButtonState()
     }
 
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
         if !isSelectionFlow {
+            let category = filteredCategories[indexPath.row]
+            selectedCategories.remove(category.title)
             updateCellSelection(at: indexPath, isSelected: false)
+            updateSetButtonState()
         }
     }
 
     private func updateCellSelection(at indexPath: IndexPath, isSelected: Bool) {
         guard let cell = categoryTableViewController.cellForRow(at: indexPath) as? CategorySelectionCell else { return }
-        let category = categories[indexPath.row]
-        cell.configure(with: category)
+        let isFirst = indexPath.row == 0
+        let isLast = indexPath.row == filteredCategories.count - 1
+        cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
     }
 }
