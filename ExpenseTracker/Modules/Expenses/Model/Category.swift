@@ -1,8 +1,6 @@
-
-
 import UIKit
 
-struct Category {
+struct CategoryModel {
     
     let name: String
     let icon: UIImage

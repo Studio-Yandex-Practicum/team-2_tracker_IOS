@@ -3,7 +3,7 @@ import Foundation
 struct Expense {
     
     let id: UUID
-    let expense: Double
+    let expense: Decimal
     let category: String
     let date: Date
     let note: String

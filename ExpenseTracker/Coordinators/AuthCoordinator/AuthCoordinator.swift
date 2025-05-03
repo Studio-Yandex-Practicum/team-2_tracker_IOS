@@ -26,6 +26,40 @@ final class AuthCoordinator: Coordinator, AuthCoordinatorProtocol {
         navigationController.setViewControllers([authViewController], animated: true)
     }
     
+    func showRegistration() {
+        let registrationViewModel = RegistrationViewModel()
+        let registrationViewController = RegistrationViewController(viewModel: registrationViewModel)
+        registrationViewController.coordinator = self
+        navigationController.pushViewController(registrationViewController, animated: true)
+    }
+    
+    func showPrivacyPolicy() {
+        let privacyPolicyViewController = PrivacyPolicyViewController()
+        privacyPolicyViewController.coordinator = self
+        navigationController.pushViewController(privacyPolicyViewController, animated: true)
+    }
+    
+    func showPasswordRecovery() {
+        let passwordRecoveryViewModel = PasswordRecoveryViewModel()
+        let passwordRecoveryViewController = PasswordRecoveryViewController(viewModel: passwordRecoveryViewModel)
+        passwordRecoveryViewController.coordinator = self
+        navigationController.pushViewController(passwordRecoveryViewController, animated: true)
+    }
+    
+    func showNewPasswordFlow() {
+        let newPasswordViewController = NewPasswordViewController()
+        newPasswordViewController.coordinator = self
+        navigationController.pushViewController(newPasswordViewController, animated: true)
+    }
+    
+    func dismissCurrentFlow() {
+        navigationController.popViewController(animated: true)
+    }
+    
+    func dismissAllFlows() {
+        navigationController.popToRootViewController(animated: true)
+    }
+    
     // MARK: - Auth Flow Methods
     
     func completeAuth() {

@@ -1,6 +1,7 @@
 import UIKit
 
 extension UILabel {
+    
     func applyTextStyle(_ style: AppTextStyle, textStyle: UIFont.TextStyle) {
         let font = dynamicFont(for: style, textStyle: textStyle)
 

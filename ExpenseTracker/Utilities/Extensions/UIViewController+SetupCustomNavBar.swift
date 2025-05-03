@@ -15,7 +15,7 @@ extension UIViewController {
             action: backAction
         )
         view.addSubview(navBar)
-
+        
         NSLayoutConstraint.activate([
             navBar.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             navBar.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 10),

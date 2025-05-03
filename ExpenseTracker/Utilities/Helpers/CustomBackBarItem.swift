@@ -23,8 +23,7 @@ final class CustomBackBarItem: UIStackView {
     private let navigationTitleLabel: UILabel = {
         let label = UILabel()
         label.textColor = .etPrimaryLabel
-        // заменено AuthAction.registration.rawValue
-  //      label.text = AuthAction.registration.rawValue
+        label.text = AuthAction.registration.rawValue
         label.numberOfLines = 0
         label.setContentCompressionResistancePriority(.required, for: .horizontal)
         label.applyTextStyle(.h1, textStyle: .title1)

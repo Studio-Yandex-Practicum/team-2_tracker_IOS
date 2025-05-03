@@ -5,6 +5,7 @@ final class AuthTextField: UITextField {
     // MARK: - Private Properties
     
     private lazy var toggleButton = UIButton(type: .custom)
+    private var isEyeIconHidden: Bool = true
     private let paddingView = UIView(frame: CGRect(
         x: 0,
         y: 0,
@@ -12,7 +13,10 @@ final class AuthTextField: UITextField {
         height: Constants.defaultHeight
     ))
     
-    private var isEyeIconHidden: Bool = true
+    private let textFieldHintLabel: TextFieldHint = {
+        let label = TextFieldHint(hintText: AuthValidator.ValidationError.invalidPassword.rawValue, color: .etSecondaryLabel)
+        return label
+    }()
 
     // MARK: - Init
     
@@ -43,6 +47,13 @@ final class AuthTextField: UITextField {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    // MARK: - Override Methods
+    
+    // Позволяет добавить внутренний отступ для иконки справа
+    override func rightViewRect(forBounds bounds: CGRect) -> CGRect {
+        return CGRect(x: bounds.width - 48, y: 0, width: 40, height: bounds.height)
+    }
 
     // MARK: - Setup Methods
     
@@ -51,21 +62,23 @@ final class AuthTextField: UITextField {
                                 titleColor: UIColor,
                                 borderColor: UIColor,
                                 borderWidth: CGFloat) {
-        self.attributedPlaceholder = NSAttributedString(
+        attributedPlaceholder = NSAttributedString(
             string: placeholder,
             attributes: [.foregroundColor: UIColor.etSecondaryLabel]
         )
         
         self.backgroundColor = backgroundColor
-        self.font = AppTextStyle.body.font
-        self.textColor = titleColor
-        self.layer.cornerRadius = Constants.defaultCornerRadius
-        self.layer.borderColor = borderColor.cgColor
-        self.layer.borderWidth = borderWidth
-        self.layer.masksToBounds = true
-        self.translatesAutoresizingMaskIntoConstraints = false
-        self.leftView = paddingView
-        self.leftViewMode = .always
+        font = AppTextStyle.body.font
+        textColor = titleColor
+        layer.cornerRadius = Constants.defaultCornerRadius
+        layer.borderColor = borderColor.cgColor
+        layer.borderWidth = borderWidth
+        layer.masksToBounds = true
+        translatesAutoresizingMaskIntoConstraints = false
+        leftView = paddingView
+        leftViewMode = .always
+        textContentType = .oneTimeCode
+        heightAnchor.constraint(equalToConstant: 48).isActive = true
     }
     
     private func setupToggleButton() {
@@ -76,7 +89,6 @@ final class AuthTextField: UITextField {
         toggleButton.addTarget(self, action: #selector(togglePasswordVisibility), for: .touchUpInside)
         
         toggleButton.tintColor = .etPrimaryLabel
-        toggleButton.widthAnchor.constraint(equalToConstant: 48).isActive = true
         
         rightView = toggleButton
         rightViewMode = .always

@@ -5,7 +5,9 @@ final class AddCategoryView: UIView {
     private let categoryButton: UIButton = {
         let categoryButton = UIButton()
         categoryButton.backgroundColor = .etCardsToggled
-        categoryButton.setBackgroundImage(UIImage(named: Asset.Icon.arrowForward.rawValue)?.withTintColor(.etCards), for: .normal)
+        categoryButton.setImage(UIImage(named: Asset.Icon.arrowForward.rawValue)?.withTintColor(.etCards), for: .normal)
+        categoryButton.layer.cornerRadius = 12
+        categoryButton.layer.masksToBounds = true
         categoryButton.translatesAutoresizingMaskIntoConstraints = false
         return categoryButton
     }()
@@ -40,9 +42,9 @@ final class AddCategoryView: UIView {
             categoryLabel.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -50),
             
             categoryButton.centerYAnchor.constraint(equalTo: self.centerYAnchor),
-            categoryButton.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -16),
-            categoryButton.widthAnchor.constraint(equalToConstant: 24),
-            categoryButton.heightAnchor.constraint(equalToConstant: 24)
+            categoryButton.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -4),
+            categoryButton.widthAnchor.constraint(equalToConstant: 44),
+            categoryButton.heightAnchor.constraint(equalToConstant: 44)
         ])
     }
     

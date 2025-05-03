@@ -29,7 +29,7 @@ final class MoneyTextField: UITextField {
                        titleColor: titleColor,
                        borderColor: borderColor,
                        borderWidth: borderWidth)
-        
+        self.delegate = self
         //        if !isEyeIconHidden {
         //            setupToggleButton(name: String)
         //        }
@@ -98,5 +98,40 @@ final class MoneyTextField: UITextField {
         static let paddingWidth: CGFloat = 16
         static let defaultHeight: CGFloat = 50
     }
-    
+}
+
+extension MoneyTextField: UITextFieldDelegate {
+    // Метод делегата для изменения текста
+       func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+           let currentText = textField.text ?? ""
+           let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
+           
+           // Убираем все символы, кроме цифр
+           let digitsOnly = updatedText.replacingOccurrences(of: "\\D", with: "", options: .regularExpression)
+           
+           // Форматируем строку, добавляя пробелы для разделения тысяч
+           let formattedText = formatCurrency(digitsOnly)
+           
+           // Обновляем текст в текстовом поле
+           textField.text = formattedText
+           return false // Возвращаем false, чтобы предотвратить стандартное поведение
+       }
+       
+       private func formatCurrency(_ number: String) -> String {
+           var formatted = ""
+           var count = 0
+           
+           // Разбиваем строку на массив символов
+           for char in number.reversed() {
+               if count == 3 {
+                   formatted.append(" ")
+                   count = 0
+               }
+               formatted.append(char)
+               count += 1
+           }
+           
+           // Возвращаем отформатированное число
+           return String(formatted.reversed())
+       }
 }

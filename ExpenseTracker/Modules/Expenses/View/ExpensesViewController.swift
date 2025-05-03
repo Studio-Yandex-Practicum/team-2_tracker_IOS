@@ -6,16 +6,40 @@ final class ExpensesViewController: UIViewController {
     
   //  var expenses: [Expense] = expensesMockData
     var viewModel = ExpensesViewModel()
-    var totalAmount: Double = 12345
+    var totalAmount: Decimal = 12345
     var currency = Currency.ruble.rawValue
     var dayToday = Date(timeIntervalSinceNow: 0)
     
     private var expensesByDate: [Date: [Expense]] = [:]
+    private var selectedCategories: Set<String>?
+    
+    private lazy var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy"
+        formatter.timeZone = TimeZone.current
+        return formatter
+    }()
 
-    
-  
-    
     // MARK: - UI components
+    
+    private lazy var dateLabel: UILabel = {
+        let dateLabel = UILabel()
+        dateLabel.textColor = UIColor.etPrimaryLabel
+        dateLabel.textAlignment = .center
+        dateLabel.translatesAutoresizingMaskIntoConstraints = false
+        return dateLabel
+    }()
+    
+    private lazy var addCategoryButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(named: Asset.Icon.btnAdd2.rawValue), for: .normal)
+        button.addTarget(self, action: #selector(addExpense), for: .touchUpInside)
+        button.heightAnchor.constraint(equalToConstant: 56).isActive = true
+        button.widthAnchor.constraint(equalToConstant: 56).isActive = true
+        button.translatesAutoresizingMaskIntoConstraints = false
+        return button
+    }()
+    
     private let expenseMoneyTable: UITableView = {
         let tableView = UITableView(frame: .zero, style: .plain)
         tableView.backgroundColor = .etBackground
@@ -73,8 +97,9 @@ final class ExpensesViewController: UIViewController {
         return yearButton
     }()
     
-    private let categoryButton: FiltersButton = {
+    private lazy var categoryButton: FiltersButton = {
         let categoryButton = FiltersButton(title: "Категории", image: (UIImage(named: Asset.Icon.filters.rawValue)?.withTintColor(.etPrimaryLabel))!)
+        categoryButton.addTarget(self, action: #selector(showCategoryFilters), for: .touchUpInside)
         return categoryButton
     }()
     
@@ -104,97 +129,127 @@ final class ExpensesViewController: UIViewController {
         view.backgroundColor = .etBackground
         
         self.expenseMoneyTable.register(ExpensesTableCell.self, forCellReuseIdentifier: "ExpensesTableCell")
-        
-        setupNavigation()
         addSubviews()
         setupLayout()
-        loadExpenses(for: dayToday, periodType: .month)
+        loadExpenses(for: dayToday, periodType: nil)
     }
     
-    func setupNavigation() {
-        // Устанавливаем атрибуты для заголовка
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: AppTextStyle.h2.font,
-            .foregroundColor: UIColor.etPrimaryLabel
-        ]
-        self.navigationController?.navigationBar.titleTextAttributes = attributes
-        navigationItem.rightBarButtonItem = UIBarButtonItem(image: UIImage(named: Asset.Icon.btnAdd2.rawValue), style: .done, target: self, action: #selector(addExpense))
+    private func setupFilterButtonState(for button: UIButton, with period: PeriodType) {
+        button.isSelected.toggle()
+        [dayButton, weekButton, monthButton, yearButton].forEach {
+            $0.backgroundColor = button == $0 && $0.isSelected ? .etAccent : .etCardsToggled
+            let titleColor = button == $0 && $0.isSelected ? UIColor.etButtonLabel : UIColor.etCards
+            $0.setTitleColor(titleColor, for: .normal)
+            
+            if button != $0 {
+                $0.isSelected = false
+            }
+            setFilters(for: button, with: period)
+        }
     }
     
+    private func setFilters(for button: UIButton, with period: PeriodType) {
+        let selectedDate = dayToday
+        let period = button.isSelected ? period : nil
+        loadExpenses(for: selectedDate, periodType: period)
+    }
     
-    @objc private func addExpense() {
-        let addVC = ChangeExpensesViewController(.add)
-        navigationController?.pushViewController(addVC, animated: true)
+    @objc
+    private func addExpense() {
+        coordinator?.showAddExpenseFlow()
     }
     
     // Пример вызова для кнопок
-    @objc private  func dayButtonTapped() {
-        dayButton.backgroundColor = .etAccent
-        dayButton.setTitleColor(.etButtonLabel, for: .normal)
-        weekButton.backgroundColor = .etCardsToggled
-        monthButton.backgroundColor = .etCardsToggled
-        yearButton.backgroundColor = .etCardsToggled
-        weekButton.setTitleColor(.etCards, for: .normal)
-        monthButton.setTitleColor(.etCards, for: .normal)
-        yearButton.setTitleColor(.etCards, for: .normal)
-        let selectedDate = dayToday
-       
-        // или любая другая дата, которую вы хотите использовать
-        loadExpenses(for: selectedDate, periodType: .day)
-     //   expenseMoneyTable.reloadData()
-     //   expenseMoneyTable.endUpdates()
+    @objc
+    private func dayButtonTapped() {
+        setupFilterButtonState(for: dayButton, with: .day)
+    }
+    
+    @objc
+    private func weekButtonTapped() {
+        setupFilterButtonState(for: weekButton, with: .week)
+    }
+    
+    @objc
+    private  func monthButtonTapped() {
+        setupFilterButtonState(for: monthButton, with: .month)
+    }
+    
+    @objc
+    private func yearButtonTapped() {
+        setupFilterButtonState(for: yearButton, with: .year)
+    }
+    
+    @objc
+    private func showCategoryFilters() {
+        coordinator?.showCategoryFiltersFlow()
+    }
+    
+    private func filterExpenses() {
+        var filteredExpenses: [Expense]
         
-    }
-    
-    @objc private func weekButtonTapped() {
-        weekButton.backgroundColor = .etAccent
-        weekButton.setTitleColor(.etButtonLabel, for: .normal)
-        dayButton.backgroundColor = .etCardsToggled
-        monthButton.backgroundColor = .etCardsToggled
-        yearButton.backgroundColor = .etCardsToggled
-        dayButton.setTitleColor(.etCards, for: .normal)
-        monthButton.setTitleColor(.etCards, for: .normal)
-        yearButton.setTitleColor(.etCards, for: .normal)
-        let selectedDate = dayToday
-        loadExpenses(for: selectedDate, periodType: .week)
-        expenseMoneyTable.reloadData()
-        expenseMoneyTable.endUpdates()
+        // Получаем расходы в зависимости от выбранного периода
+        if let periodType = getSelectedPeriodType() {
+            let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
+            let expensesByDate = viewModel.getExpensesForPeriod(startDate: startDate, endDate: endDate)
+            filteredExpenses = expensesByDate.values.flatMap { $0 }
+        } else {
+            filteredExpenses = viewModel.getAllExpenses()
+        }
         
-    }
-    
-    @objc private  func monthButtonTapped() {
-        monthButton.backgroundColor = .etAccent
-        monthButton.setTitleColor(.etButtonLabel, for: .normal)
-        weekButton.backgroundColor = .etCardsToggled
-        dayButton.backgroundColor = .etCardsToggled
-        yearButton.backgroundColor = .etCardsToggled
-        weekButton.setTitleColor(.etCards, for: .normal)
-        dayButton.setTitleColor(.etCards, for: .normal)
-        yearButton.setTitleColor(.etCards, for: .normal)
-        let selectedDate = dayToday
-        loadExpenses(for: selectedDate, periodType: .month)
+        // Фильтрация по категориям
+        if let selectedCategories = selectedCategories, !selectedCategories.isEmpty {
+            filteredExpenses = filteredExpenses.filter { expense in
+                selectedCategories.contains(expense.category.description)
+            }
+        }
+        
+        // Группируем расходы по датам
+        expensesByDate = Dictionary(grouping: filteredExpenses) { expense in
+            Calendar.current.startOfDay(for: expense.date)
+        }
+        
+        // Обновляем общую сумму
+        totalAmount = filteredExpenses.reduce(0, { $0 + $1.expense })
+        
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
+        numberFormatter.groupingSeparator = " "
+        numberFormatter.decimalSeparator = ","
+        
+        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+            labelMoney.text = formattedAmount + " " + currency
+        }
+        
+        // Обновляем отображение даты
+        if let periodType = getSelectedPeriodType() {
+            let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
+            let textForCurrentDate = dateFormatter.string(from: startDate)
+            let startOfCurrentDay = Calendar.current.startOfDay(for: dayToday)
+            dateLabel.text = startOfCurrentDay == startDate ? textForCurrentDate : dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
+        } else {
+            dateLabel.text = "Расходы"
+        }
+        
         expenseMoneyTable.reloadData()
     }
     
-    @objc private  func yearButtonTapped() {
-        yearButton.backgroundColor = .etAccent
-        yearButton.setTitleColor(.etButtonLabel, for: .normal)
-        dayButton.backgroundColor = .etCardsToggled
-        weekButton.backgroundColor = .etCardsToggled
-        monthButton.backgroundColor = .etCardsToggled
-        dayButton.setTitleColor(.etCards, for: .normal)
-        weekButton.setTitleColor(.etCards, for: .normal)
-        monthButton.setTitleColor(.etCards, for: .normal)
-        let selectedDate = dayToday
-        loadExpenses(for: selectedDate, periodType: .year)
-        expenseMoneyTable.reloadData()
+    private func getSelectedPeriodType() -> PeriodType? {
+        if dayButton.isSelected { return .day }
+        if weekButton.isSelected { return .week }
+        if monthButton.isSelected { return .month }
+        if yearButton.isSelected { return .year }
+        return nil
     }
-    
     
     func addSubviews() {
         expenseMoneyTable.delegate = self
         expenseMoneyTable.dataSource = self
         
+        view.addSubview(dateLabel)
+        view.addSubview(addCategoryButton)
         view.addSubview(labelMoney)
         view.addSubview(calendarButton)
         view.addSubview(calendarStack)
@@ -207,23 +262,31 @@ final class ExpensesViewController: UIViewController {
     }
     
     func setupLayout() {
+        navigationController?.setNavigationBarHidden(true, animated: false)
+        
         var constraints = [
             
-            labelMoney.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
+            dateLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 56),
+            dateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            
+            addCategoryButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 44),
+            addCategoryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
+            
+            labelMoney.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 24),
             labelMoney.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
             calendarButton.topAnchor.constraint(equalTo: labelMoney.bottomAnchor, constant: 16),
-            calendarButton.heightAnchor.constraint(equalToConstant: 28),
-            calendarButton.widthAnchor.constraint(equalToConstant: 28),
-            calendarButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            calendarButton.heightAnchor.constraint(equalToConstant: 24),
+            calendarButton.widthAnchor.constraint(equalToConstant: 24),
+            calendarButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             
             calendarStack.topAnchor.constraint(equalTo: labelMoney.bottomAnchor, constant: 16),
             calendarStack.heightAnchor.constraint(equalToConstant: 28),
-            calendarStack.leadingAnchor.constraint(equalTo: calendarButton.safeAreaLayoutGuide.trailingAnchor, constant: 10),
+            calendarStack.leadingAnchor.constraint(equalTo: calendarButton.trailingAnchor, constant: 10),
             calendarStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
-            categoryButton.topAnchor.constraint(equalTo: calendarButton.bottomAnchor, constant: 22),
-            categoryButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16)
+            categoryButton.topAnchor.constraint(equalTo: calendarButton.bottomAnchor, constant: 18),
+            categoryButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6)
         ]
         
         if totalAmount == 0 {
@@ -237,30 +300,66 @@ final class ExpensesViewController: UIViewController {
                 
                 addExpensesLabel.topAnchor.constraint(equalTo: noExpensesLabel.bottomAnchor, constant: 8),
                 addExpensesLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-                addExpensesLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24) ]
-            
+                addExpensesLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)]
         } else {
             view.addSubview(expenseMoneyTable)
             constraints += [
                 expenseMoneyTable.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 12),
                 expenseMoneyTable.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
                 expenseMoneyTable.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-                expenseMoneyTable.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor) ]
+                expenseMoneyTable.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)]
         }
         NSLayoutConstraint.activate(constraints)
     }
     
-    private func loadExpenses(for selectedDate: Date, periodType: PeriodType) {
-        let (startDate, endDate) = calculatePeriod(for: selectedDate, periodType: periodType)
-        expensesByDate = viewModel.getExpensesForPeriod(startDate: startDate, endDate: endDate)
-        print(expensesByDate.count)
-     //   expenseMoneyTable.sectionIndexMinimumDisplayRowCount = expensesByDate.count - 1
-        labelMoney.text = String(totalAmount)
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium // Формат отображения даты
-        navigationItem.title = dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
+    private func loadExpenses(for selectedDate: Date, periodType: PeriodType?) {
+        if let periodType = periodType {
+            let (startDate, endDate) = calculatePeriod(for: selectedDate, periodType: periodType)
+            expensesByDate = viewModel.getExpensesForPeriod(startDate: startDate, endDate: endDate)
+            
+            // Подсчитываем общую сумму для выбранного периода
+            let allExpenses = expensesByDate.values.flatMap { $0 }
+            totalAmount = allExpenses.reduce(0) { $0 + $1.expense }
+            
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.minimumFractionDigits = 2
+            numberFormatter.maximumFractionDigits = 2
+            numberFormatter.groupingSeparator = " "
+            numberFormatter.decimalSeparator = ","
+            
+            if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+                labelMoney.text = formattedAmount + " " + currency
+            }
+            
+            let textForCurrentDate = dateFormatter.string(from: startDate)
+            let startOfCurrentDay = Calendar.current.startOfDay(for: selectedDate)
+            dateLabel.text = startOfCurrentDay == startDate ? textForCurrentDate : dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
+            dateLabel.applyTextStyle(.h2, textStyle: .caption2)
+        } else {
+            expensesByDate = viewModel.getAllExpensesByDate()
+            
+            // Подсчитываем общую сумму для всех расходов
+            let allExpenses = expensesByDate.values.flatMap { $0 }
+            totalAmount = allExpenses.reduce(0) { $0 + $1.expense }
+            
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.minimumFractionDigits = 2
+            numberFormatter.maximumFractionDigits = 2
+            numberFormatter.groupingSeparator = " "
+            numberFormatter.decimalSeparator = ","
+            
+            if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+                labelMoney.text = formattedAmount + " " + currency
+            }
+            
+            dateLabel.text = "Расходы"
+            dateLabel.applyTextStyle(.h2, textStyle: .caption2)
+        }
+        expenseMoneyTable.reloadData()
     }
-    
+
     private func calculatePeriod(for selectedDate: Date, periodType: PeriodType) -> (Date, Date) {
         let currentCalendar = Calendar.current
         var startDate: Date
@@ -268,41 +367,35 @@ final class ExpensesViewController: UIViewController {
         
         switch periodType {
         case .day:
-            startDate = selectedDate
-            endDate = selectedDate// Текущий день
+            startDate = currentCalendar.startOfDay(for: selectedDate)
+            endDate = selectedDate
         case .week:
-            startDate = currentCalendar.date(from: currentCalendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: selectedDate))!
-            // Находим конец недели, добавляя 6 дней к началу недели
-            endDate = currentCalendar.date(byAdding: .day, value: 6, to: startDate) ?? selectedDate
-            
+            endDate = selectedDate
+            // Находим начало недели, отнимая 6 дней от текущего дня
+            startDate = currentCalendar.date(byAdding: .day, value: -7, to: endDate) ?? selectedDate
         case .month:
-            startDate = currentCalendar.date(from: currentCalendar.dateComponents([.year, .month], from: selectedDate))!
-            // Находим конец месяца, добавляя к началу месяца количество дней, равное количеству дней в месяце
+            endDate = selectedDate
+            // Находим начало месяца, отнимая от текущего дня количество дней в месяце
             let range = currentCalendar.range(of: .day, in: .month, for: selectedDate)!
-            endDate = currentCalendar.date(byAdding: .day, value: range.count - 1, to: startDate)!
-            
+            startDate = currentCalendar.date(byAdding: .day, value: -range.count - 1, to: endDate)!
         case .year:
-            startDate = currentCalendar.date(from: currentCalendar.dateComponents([.year], from: selectedDate))!
-            // Находим конец года, добавляя 1 год к началу года и вычитая 1 день
-            endDate = currentCalendar.date(byAdding: .day, value: -1, to: currentCalendar.date(from: DateComponents(year: currentCalendar.component(.year, from: selectedDate) + 1))!)!
+            endDate = selectedDate
+            // Находим год, отнимая от текущего дня год
+            startDate = currentCalendar.date(byAdding: .year, value: -1, to: endDate)!
         }
         return (startDate, endDate)
-     
     }
 }
-
 
 // MARK: - TableView Functhion
 extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
-    
     func numberOfSections(in tableView: UITableView) -> Int {
         return expensesByDate.count
-      
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        var dateKeys = Array(expensesByDate.keys)
+        let dateKeys = Array(expensesByDate.keys)
         let dateKey = dateKeys.sorted(by: >)
         return expensesByDate[dateKey[section]]?.count ?? 0
     }
@@ -311,7 +404,9 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         if let cell = expenseMoneyTable.dequeueReusableCell(withIdentifier: "ExpensesTableCell", for: indexPath) as? ExpensesTableCell {
             cell.contentView.backgroundColor = .etBackground
             cell.separatorInset = UIEdgeInsets.zero
+            cell.selectionStyle = .none
             cell.translatesAutoresizingMaskIntoConstraints = true
+    
             let dateKeys = Array(expensesByDate.keys)
             let dateKey = dateKeys.sorted(by: >)
             if let expense = expensesByDate[dateKey[indexPath.section]]?[indexPath.row] {
@@ -321,14 +416,12 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
                 cell.noteMoney.text = expense.expense.formatted()
             }
             return cell
-            
         } else {
             // Обработка случая, когда не удалось произвести преобразование
             print("Failed to dequeue a cell of type ExpensesTableCell")
             return UITableViewCell()
         }
     }
-    
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 60
@@ -375,19 +468,19 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
     // Закругление углов секции таблицы
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-        
         let cornerRadius = 12
         var corners: UIRectCorner = []
-        if indexPath.row == 0
-        {
+        
+        if indexPath.row == 0 {
             corners.update(with: .topLeft)
             corners.update(with: .topRight)
         }
-        if indexPath.row == tableView.numberOfRows(inSection: indexPath.section) - 1
-        {
+        
+        if indexPath.row == tableView.numberOfRows(inSection: indexPath.section) - 1 {
             corners.update(with: .bottomLeft)
             corners.update(with: .bottomRight)
         }
+        
         let maskLayer = CAShapeLayer()
         maskLayer.path = UIBezierPath(roundedRect: cell.bounds,
                                       byRoundingCorners: corners,
@@ -395,19 +488,16 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         cell.layer.mask = maskLayer
     }
     
-    
-    //MARK: - Headers
+    // MARK: - Headers
     
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium // Формат отображения даты
+
         let headerView = ExpensesTableHeaders()
-        var dateKeys = Array(expensesByDate.keys)
-        var dateKey = dateKeys.sorted(by: >)
-       
-    
-        let headerTitle = dateFormatter.string(from: dateKey[section])
-        headerView.configure(title: headerTitle)
+        let dateKeys = Array(expensesByDate.keys)
+        let dateKey = dateKeys.sorted(by: >)
+        headerView.configure(title: dateKey[section])
         return headerView
     }
     
@@ -426,6 +516,10 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
-
-
-
+// MARK: - CategorySelectionDelegate
+extension ExpensesViewController: CategorySelectionDelegate {
+    func didSelectCategories(_ categories: Set<String>) {
+        selectedCategories = categories
+        filterExpenses()
+    }
+}

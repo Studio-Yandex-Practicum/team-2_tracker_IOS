@@ -7,9 +7,9 @@
 
 import UIKit
 
-class ExpensesTableCell: UITableViewCell {
+final class ExpensesTableCell: UITableViewCell {
     
-    var expenses: Double = 0.00
+    var expenses: Decimal = 0
     var currency = Currency.ruble.rawValue
     
     private lazy var backView: UIView = {
@@ -47,7 +47,7 @@ class ExpensesTableCell: UITableViewCell {
         let labelMoney = UILabel()
         labelMoney.text = "Очень очень очень очень длинное примечание" // переменная
         labelMoney.textColor = .etSecondaryLabel
-        labelMoney.font = AppTextStyle.secondary.font
+//        labelMoney.font = AppTextStyle.secondary.font
         labelMoney.translatesAutoresizingMaskIntoConstraints = false
         return labelMoney
     }()
@@ -68,9 +68,6 @@ class ExpensesTableCell: UITableViewCell {
     }
     
     func setupCell() {
-        self.layer.cornerRadius = 12
-        self.layer.masksToBounds = true
-               
         expenceView.addSubview(expenceImage)
         contentView.addSubview(backView)
         backView.addSubview(expenceView)

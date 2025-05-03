@@ -3,7 +3,7 @@ import UIKit
 final class MainButton: UIButton {
     
     init(title: String,
-         backgroundColor: UIColor = .etAccent,
+         backgroundColor: UIColor = .etInactive,
          titleColor: UIColor = .etButtonLabel,
          cornerRadius: CGFloat = 12,
          style: AppTextStyle = .button,
@@ -13,6 +13,7 @@ final class MainButton: UIButton {
         
         super.init(frame: .zero)
         
+        isEnabled = false
         setTitle(title, for: .normal)
         self.backgroundColor = backgroundColor
         setTitleColor(titleColor, for: .normal)
@@ -21,6 +22,7 @@ final class MainButton: UIButton {
         translatesAutoresizingMaskIntoConstraints = false
         titleLabel?.numberOfLines = 1
         titleLabel?.textAlignment = .center
+        heightAnchor.constraint(equalToConstant: 48).isActive = true
     }
     
     required init?(coder: NSCoder) {
