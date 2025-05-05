@@ -70,7 +70,7 @@ final class ExpensesViewController: UIViewController {
     
     private let calendarButton: CalendarButton = {
         let calendarButton = CalendarButton(backgroundColor: .etBackground)
-//        calendarButton.addTarget(self, action: #selector(/*calendarButtonTapped*/), for: .touchUpInside)
+        calendarButton.addTarget(self, action: #selector(calendarButtonTapped), for: .touchUpInside)
         return calendarButton
     }()
     
@@ -520,10 +520,25 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
 }
 
 // MARK: - CategorySelectionDelegate
+
 extension ExpensesViewController: CategorySelectionDelegate {
     
     func didSelectCategories(_ categories: Set<String>) {
         selectedCategories = categories
         filterExpenses()
+    }
+}
+
+// MARK: - DateRangeCalendarViewDelegate
+
+extension ExpensesViewController: DateRangeCalendarViewDelegate {
+
+    func didSelectDateRange(start: Date, end: Date) {
+        // Обработка выбранного диапазона дат
+        // TODO: Обновить UI с выбранным диапазоном дат
+    }
+
+    @objc private func calendarButtonTapped() {
+        DateRangeCalendarView.show(in: self, delegate: self)
     }
 }
