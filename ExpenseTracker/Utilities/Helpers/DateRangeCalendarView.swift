@@ -2,6 +2,7 @@ import UIKit
 
 protocol DateRangeCalendarViewDelegate: AnyObject {
     func didSelectDateRange(start: Date, end: Date)
+    func didConfirmDateRange()
 }
 
 final class DateRangeCalendarView: UIView {
@@ -344,9 +345,9 @@ final class DateRangeCalendarView: UIView {
             collectionView.topAnchor.constraint(equalTo: weekdaysStackView.bottomAnchor, constant: 16),
             collectionView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             collectionView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            collectionView.heightAnchor.constraint(equalToConstant: 200),
+            collectionView.heightAnchor.constraint(equalToConstant: 260),
             
-            buttonsStackView.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 8),
+            buttonsStackView.topAnchor.constraint(equalTo: collectionView.bottomAnchor),
             buttonsStackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
             buttonsStackView.heightAnchor.constraint(equalToConstant: 40),
             
@@ -428,6 +429,7 @@ final class DateRangeCalendarView: UIView {
     private func okButtonTapped() {
         if let startDate = selectedStartDate, let endDate = selectedEndDate {
             delegate?.didSelectDateRange(start: startDate, end: endDate)
+            delegate?.didConfirmDateRange()
             hideCalendar()
         }
     }
@@ -505,7 +507,11 @@ final class DateRangeCalendarView: UIView {
             return date == selectedStartDate
         }
         
-        return date >= startDate && date <= endDate
+        let startOfDay = calendar.startOfDay(for: startDate)
+        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
+        let currentDate = calendar.startOfDay(for: date)
+        
+        return currentDate >= startOfDay && currentDate <= endOfDay
     }
     
     private func isDateInRange(_ date: Date) -> Bool {
@@ -513,7 +519,11 @@ final class DateRangeCalendarView: UIView {
             return false
         }
         
-        return date > startDate && date < endDate
+        let startOfDay = calendar.startOfDay(for: startDate)
+        let endOfDay = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
+        let currentDate = calendar.startOfDay(for: date)
+        
+        return currentDate > startOfDay && currentDate < endOfDay
     }
     
     static func show(in viewController: UIViewController, delegate: DateRangeCalendarViewDelegate) {
@@ -539,7 +549,7 @@ final class DateRangeCalendarView: UIView {
             calendarView.centerXAnchor.constraint(equalTo: containerView.centerXAnchor),
             calendarView.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
             calendarView.widthAnchor.constraint(equalTo: containerView.widthAnchor, constant: -32),
-            calendarView.heightAnchor.constraint(equalToConstant: 540)
+            calendarView.heightAnchor.constraint(equalToConstant: 580)
         ])
         
         // Анимация появления
@@ -588,7 +598,6 @@ extension DateRangeCalendarView: UICollectionViewDataSource {
             }
             cell.configure(day: day, isCurrentMonth: true, isToday: isToday)
         } else {
-            cell.configure(day: day, isCurrentMonth: false, isToday: false)
             cell.setHidden(true)
         }
         
@@ -601,6 +610,11 @@ extension DateRangeCalendarView: UICollectionViewDataSource {
 extension DateRangeCalendarView: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let selectedDate = dates[indexPath.item]
+        
+        // Проверяем, что выбранная дата относится к текущему месяцу
+        if !calendar.isDate(selectedDate, equalTo: currentMonth, toGranularity: .month) {
+            return
+        }
         
         if selectedStartDate == nil {
             selectedStartDate = selectedDate
@@ -785,6 +799,7 @@ final class DateCell: UICollectionViewCell {
         dayLabel.textColor = .clear
         containerView.backgroundColor = .clear
         containerView.layer.borderWidth = 0
+        isUserInteractionEnabled = false
     }
     
     override func prepareForReuse() {
@@ -793,5 +808,6 @@ final class DateCell: UICollectionViewCell {
         containerView.backgroundColor = .clear
         dayLabel.textColor = .etButtonLabel
         containerView.layer.borderWidth = 0
+        isUserInteractionEnabled = true
     }
 }

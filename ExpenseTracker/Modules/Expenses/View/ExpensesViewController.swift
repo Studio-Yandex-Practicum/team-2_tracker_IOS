@@ -12,6 +12,8 @@ final class ExpensesViewController: UIViewController {
     
     private var expensesByDate: [Date: [Expense]] = [:]
     private var selectedCategories: Set<String>?
+    private var selectedDateRange: (start: Date, end: Date)?
+    private var tempDateRange: (start: Date, end: Date)?
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -152,7 +154,7 @@ final class ExpensesViewController: UIViewController {
     private func setFilters(for button: UIButton, with period: PeriodType) {
         let selectedDate = dayToday
         let period = button.isSelected ? period : nil
-        loadExpenses(for: selectedDate, periodType: period)
+        filterExpenses()
     }
     
     @objc
@@ -163,21 +165,25 @@ final class ExpensesViewController: UIViewController {
     // Пример вызова для кнопок
     @objc
     private func dayButtonTapped() {
+        selectedDateRange = nil
         setupFilterButtonState(for: dayButton, with: .day)
     }
     
     @objc
     private func weekButtonTapped() {
+        selectedDateRange = nil
         setupFilterButtonState(for: weekButton, with: .week)
     }
     
     @objc
-    private  func monthButtonTapped() {
+    private func monthButtonTapped() {
+        selectedDateRange = nil
         setupFilterButtonState(for: monthButton, with: .month)
     }
     
     @objc
     private func yearButtonTapped() {
+        selectedDateRange = nil
         setupFilterButtonState(for: yearButton, with: .year)
     }
     
@@ -190,12 +196,24 @@ final class ExpensesViewController: UIViewController {
         var filteredExpenses: [Expense]
         
         // Получаем расходы в зависимости от выбранного периода
-        if let periodType = getSelectedPeriodType() {
-            let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
-            let expensesByDate = viewModel.getExpensesForPeriod(startDate: startDate, endDate: endDate)
+        if let dateRange = selectedDateRange {
+            let startOfDay = Calendar.current.startOfDay(for: dateRange.start)
+            let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: dateRange.end) ?? dateRange.end
+            
+            let expensesByDate = viewModel.getExpensesForPeriod(startDate: startOfDay, endDate: endOfDay)
             filteredExpenses = expensesByDate.values.flatMap { $0 }
+            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etAccent), for: .normal)
+        } else if let periodType = getSelectedPeriodType() {
+            let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
+            let startOfDay = Calendar.current.startOfDay(for: startDate)
+            let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
+            
+            let expensesByDate = viewModel.getExpensesForPeriod(startDate: startOfDay, endDate: endOfDay)
+            filteredExpenses = expensesByDate.values.flatMap { $0 }
+            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etCards), for: .normal)
         } else {
             filteredExpenses = viewModel.getAllExpenses()
+            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etCards), for: .normal)
         }
         
         // Фильтрация по категориям
@@ -225,7 +243,9 @@ final class ExpensesViewController: UIViewController {
         }
         
         // Обновляем отображение даты
-        if let periodType = getSelectedPeriodType() {
+        if let dateRange = selectedDateRange {
+            dateLabel.text = dateFormatter.string(from: dateRange.start) + " - " + dateFormatter.string(from: dateRange.end)
+        } else if let periodType = getSelectedPeriodType() {
             let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
             let textForCurrentDate = dateFormatter.string(from: startDate)
             let startOfCurrentDay = Calendar.current.startOfDay(for: dayToday)
@@ -391,6 +411,7 @@ final class ExpensesViewController: UIViewController {
 }
 
 // MARK: - TableView Functhion
+
 extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
     func numberOfSections(in tableView: UITableView) -> Int {
@@ -532,12 +553,26 @@ extension ExpensesViewController: CategorySelectionDelegate {
 // MARK: - DateRangeCalendarViewDelegate
 
 extension ExpensesViewController: DateRangeCalendarViewDelegate {
-
+    
     func didSelectDateRange(start: Date, end: Date) {
-        // Обработка выбранного диапазона дат
-        // TODO: Обновить UI с выбранным диапазоном дат
+        // Сохраняем временный диапазон дат
+        tempDateRange = (start, end)
     }
-
+    
+    func didConfirmDateRange() {
+        // Применяем фильтр только при нажатии ОК
+        if let dateRange = tempDateRange {
+            selectedDateRange = dateRange
+            // Сбрасываем выбранные кнопки периода
+            [dayButton, weekButton, monthButton, yearButton].forEach {
+                $0.isSelected = false
+                $0.backgroundColor = .etCardsToggled
+                $0.setTitleColor(.etCards, for: .normal)
+            }
+            filterExpenses()
+        }
+    }
+    
     @objc private func calendarButtonTapped() {
         DateRangeCalendarView.show(in: self, delegate: self)
     }
