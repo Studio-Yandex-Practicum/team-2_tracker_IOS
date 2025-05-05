@@ -1,4 +1,5 @@
 import UIKit
+import SwiftUICore
 
 final class AnalyticsViewController: UIViewController {
     
@@ -34,19 +35,29 @@ final class AnalyticsViewController: UIViewController {
     
     private lazy var labelMoney: UILabel = {
         let labelMoney = UILabel()
-        labelMoney.text = String(totalAmount.formatted()) + " " + currency
         labelMoney.textColor = .etPrimaryLabel
         labelMoney.font = AppTextStyle.h1.font
         labelMoney.translatesAutoresizingMaskIntoConstraints = false
+        
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
+        numberFormatter.groupingSeparator = " "
+        numberFormatter.decimalSeparator = ","
+        
+        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+            labelMoney.text = formattedAmount + " " + currency
+        }
+        
         return labelMoney
     }()
-    
-    // аналитика
-    private lazy var analyticsView: UIView = {
-        let analyticsView = UIView()
-        analyticsView.backgroundColor = .etAccent
-        analyticsView.translatesAutoresizingMaskIntoConstraints = false
-        return analyticsView
+
+    private let donutChartView: DonutChartUIKitView = {
+        let view = DonutChartUIKitView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+       
+        return view
     }()
     
     private let expenseCategoryTable: UITableView = {
@@ -61,6 +72,7 @@ final class AnalyticsViewController: UIViewController {
 
     private lazy var sortedCategoryButton: FiltersButton = {
         let categoryButton = FiltersButton(title: "Сортировать", image: (UIImage(named: Asset.Icon.arrowSortDown.rawValue)?.withTintColor(.etPrimaryLabel))!)
+        categoryButton.titleLabel?.applyTextStyle(.body, textStyle: .body)
   //      categoryButton.addTarget(self, action: #selector(showCategoryFilters), for: .touchUpInside)
         return categoryButton
     }()
@@ -143,24 +155,19 @@ final class AnalyticsViewController: UIViewController {
             }
         }
         
-//        // Группируем расходы по датам
-//        expensesByDate = Dictionary(grouping: filteredExpenses) { expense in
-//            Calendar.current.startOfDay(for: expense.date)
-//        }
-        
         // Обновляем общую сумму
         totalAmount = filteredExpenses.reduce(0, { $0 + $1.expense })
         
-        let numberFormatter = NumberFormatter()
-        numberFormatter.numberStyle = .decimal
-        numberFormatter.minimumFractionDigits = 2
-        numberFormatter.maximumFractionDigits = 2
-        numberFormatter.groupingSeparator = " "
-        numberFormatter.decimalSeparator = ","
-        
-        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-            labelMoney.text = formattedAmount + " " + currency
-        }
+//        let numberFormatter = NumberFormatter()
+//        numberFormatter.numberStyle = .decimal
+//        numberFormatter.minimumFractionDigits = 2
+//        numberFormatter.maximumFractionDigits = 2
+//        numberFormatter.groupingSeparator = " "
+//        numberFormatter.decimalSeparator = ","
+//        
+//        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+//            labelMoney.text = formattedAmount + " " + currency
+//        }
         
         // Обновляем отображение даты
         if let periodType = getSelectedPeriodType() {
@@ -191,6 +198,7 @@ final class AnalyticsViewController: UIViewController {
        
         addSubviews()
         setupLayout()
+        setupDonutChart()
     }
     
     func addSubviews() {
@@ -199,7 +207,7 @@ final class AnalyticsViewController: UIViewController {
         
         view.addSubview(dateLabel)
         view.addSubview(labelMoney)
-        view.addSubview(analyticsView)
+        view.addSubview(donutChartView)
         view.addSubview(calendarButton)
         view.addSubview(calendarStack)
         view.addSubview(sortedCategoryButton)
@@ -222,17 +230,17 @@ final class AnalyticsViewController: UIViewController {
             labelMoney.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             labelMoney.heightAnchor.constraint(equalToConstant: 28),
             
-            analyticsView.topAnchor.constraint(equalTo: labelMoney.bottomAnchor, constant: 8),
-            analyticsView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            analyticsView.heightAnchor.constraint(equalToConstant: 130),
-            analyticsView.widthAnchor.constraint(equalToConstant: 130),
+            donutChartView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            donutChartView.topAnchor.constraint(equalTo: labelMoney.bottomAnchor, constant: 8),
+            donutChartView.widthAnchor.constraint(equalToConstant: 130),
+            donutChartView.heightAnchor.constraint(equalToConstant: 130),
             
-            calendarButton.topAnchor.constraint(equalTo: analyticsView.bottomAnchor, constant: 12),
+            calendarButton.topAnchor.constraint(equalTo: donutChartView.bottomAnchor, constant: 12),
             calendarButton.heightAnchor.constraint(equalToConstant: 24),
             calendarButton.widthAnchor.constraint(equalToConstant: 24),
             calendarButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             
-            calendarStack.topAnchor.constraint(equalTo: analyticsView.bottomAnchor, constant: 12),
+            calendarStack.topAnchor.constraint(equalTo: donutChartView.bottomAnchor, constant: 12),
             calendarStack.heightAnchor.constraint(equalToConstant: 28),
             calendarStack.leadingAnchor.constraint(equalTo: calendarButton.trailingAnchor, constant: 10),
             calendarStack.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -289,8 +297,21 @@ final class AnalyticsViewController: UIViewController {
         }
         return (startDate, endDate)
     }
-}
     
+    private func setupDonutChart() {
+        let data: [(value: Double, color: UIColor)] = [
+            (1, .etbRed),
+            (1, .etGrayBlue),
+            (1, .etGreen),
+            (1, .etBlue),
+            (1, .etYellow),
+            (1, .etPurple),
+            (1, .etbRed)
+        ]
+        donutChartView.configure(with: data, overlapAngle: 8)
+    }
+}
+
 // MARK: - TableView Functhion
     extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
         func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
