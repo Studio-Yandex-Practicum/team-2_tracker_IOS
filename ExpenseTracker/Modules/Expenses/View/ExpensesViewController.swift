@@ -70,6 +70,7 @@ final class ExpensesViewController: UIViewController {
     
     private let calendarButton: CalendarButton = {
         let calendarButton = CalendarButton(backgroundColor: .etBackground)
+//        calendarButton.addTarget(self, action: #selector(/*calendarButtonTapped*/), for: .touchUpInside)
         return calendarButton
     }()
     
@@ -275,7 +276,7 @@ final class ExpensesViewController: UIViewController {
             labelMoney.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 24),
             labelMoney.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
-            calendarButton.topAnchor.constraint(equalTo: labelMoney.bottomAnchor, constant: 16),
+            calendarButton.topAnchor.constraint(equalTo: labelMoney.bottomAnchor, constant: 17),
             calendarButton.heightAnchor.constraint(equalToConstant: 24),
             calendarButton.widthAnchor.constraint(equalToConstant: 24),
             calendarButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
@@ -300,14 +301,16 @@ final class ExpensesViewController: UIViewController {
                 
                 addExpensesLabel.topAnchor.constraint(equalTo: noExpensesLabel.bottomAnchor, constant: 8),
                 addExpensesLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-                addExpensesLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)]
+                addExpensesLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)
+            ]
         } else {
             view.addSubview(expenseMoneyTable)
             constraints += [
                 expenseMoneyTable.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 12),
                 expenseMoneyTable.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
                 expenseMoneyTable.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-                expenseMoneyTable.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)]
+                expenseMoneyTable.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            ]
         }
         NSLayoutConstraint.activate(constraints)
     }
@@ -518,6 +521,7 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
 
 // MARK: - CategorySelectionDelegate
 extension ExpensesViewController: CategorySelectionDelegate {
+    
     func didSelectCategories(_ categories: Set<String>) {
         selectedCategories = categories
         filterExpenses()

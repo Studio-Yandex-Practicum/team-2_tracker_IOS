@@ -16,6 +16,9 @@ enum Asset {
         case arrowForward = "forward"
         case arrowSort = "sort"
         case arrowUp = "up"
+        case previousMonth = "previousMonth"
+        case nextMonth = "nextMonth"
+        case calendarDropDown = "calendarDropDown"
         
         // General
         case btnAdd = "btn-add"
