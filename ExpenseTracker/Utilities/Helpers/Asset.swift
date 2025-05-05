@@ -15,6 +15,8 @@ enum Asset {
         case arrowDropup = "dropup"
         case arrowForward = "forward"
         case arrowSort = "sort"
+        case arrowSortDown = "sort down"
+        case arrowSortUp = "sort up"
         case arrowUp = "up"
         case previousMonth = "previousMonth"
         case nextMonth = "nextMonth"

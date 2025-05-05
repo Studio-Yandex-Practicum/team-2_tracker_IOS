@@ -1,15 +1,7 @@
-//
-//  ExpensesTableCell.swift
-//  ExpenseTracker
-//
-//  Created by Ольга Чушева on 09.04.2025.
-//
-
 import UIKit
 
-final class ExpensesTableCell: UITableViewCell {
-    
-    var expenses: Decimal = 0
+final class AnalyticsTableCell: UITableViewCell {
+
     var currency = Currency.ruble.rawValue
     
     private lazy var backView: UIView = {
@@ -19,7 +11,7 @@ final class ExpensesTableCell: UITableViewCell {
         return backView
     }()
     
-    private lazy var expenceView: UIView = {
+     lazy var expenceView: UIView = {
         let expenceView = UIView()
         expenceView.backgroundColor = .etIconsBG
         expenceView.layer.cornerRadius = 16
@@ -43,9 +35,9 @@ final class ExpensesTableCell: UITableViewCell {
         return labelMoney
     }()
     
-    lazy var noteMoney: UILabel = {
+    lazy var percentMoney: UILabel = {
         let labelMoney = UILabel()
-        labelMoney.text = "Очень очень очень очень длинное примечание" // переменная
+        labelMoney.text = "15%" // переменная
         labelMoney.textColor = .etSecondaryLabel
         //        labelMoney.font = AppTextStyle.secondary.font
         labelMoney.translatesAutoresizingMaskIntoConstraints = false
@@ -54,7 +46,7 @@ final class ExpensesTableCell: UITableViewCell {
     
     lazy var labelMoneyCash: UILabel = {
         let labelMoney = UILabel()
-        labelMoney.text = ""
+        labelMoney.text = "500"
         labelMoney.textColor = .etPrimaryLabel
         labelMoney.font = AppTextStyle.body.font
         labelMoney.translatesAutoresizingMaskIntoConstraints = false
@@ -72,14 +64,12 @@ final class ExpensesTableCell: UITableViewCell {
         expenceView.addSubview(expenceImage)
         contentView.addSubview(backView)
         backView.addSubview(expenceView)
-        //        backView.addSubview(categoryMoney)
-        //        backView.addSubview(noteMoney)
         backView.addSubview(labelMoneyCash)
+        backView.addSubview(categoryMoney)
+        backView.addSubview(percentMoney)
     }
     
     func setupCell() {
-        
-        var noteMonewCell = noteMoney.text
         
         var constraints = [
             
@@ -97,32 +87,16 @@ final class ExpensesTableCell: UITableViewCell {
             expenceImage.centerXAnchor.constraint(equalTo: expenceView.centerXAnchor),
             
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
-            labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16) ]
-        
-        if noteMonewCell != "" {
+            labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16),
             
-            backView.addSubview(categoryMoney)
-            backView.addSubview(noteMoney)
+            categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+            categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
+            categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68),
             
-            constraints += [
-                categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-                categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
-                categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68),
-                
-                noteMoney.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-                noteMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
-                noteMoney.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -48)
-            ]
-            
-        }
-       else {
-            backView.addSubview(categoryMoney)
-            
-            constraints += [
-                categoryMoney.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-                categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
-                categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68) ]
-        }
+            percentMoney.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+            percentMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
+            percentMoney.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -48)
+        ]
         
         NSLayoutConstraint.activate(constraints)
     }

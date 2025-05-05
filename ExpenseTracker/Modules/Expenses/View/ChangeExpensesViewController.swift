@@ -69,15 +69,6 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         return addDate
     }()
     
-//    private lazy var dateButton: UIButton = {
-//        let button = UIButton(type: .system)
-//        button.translatesAutoresizingMaskIntoConstraints = false
-//        button.setTitle("Выбрать дату", for: .normal)
-//        button.setTitleColor(.label, for: .normal)
-//        button.addTarget(self, action: #selector(showDatePicker), for: .touchUpInside)
-//        return button
-//    }()
-    
     private lazy var datePicker: UIDatePicker = {
         let picker = UIDatePicker()
         picker.datePickerMode = .date
@@ -169,38 +160,6 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     private func addCategoryButton() {
         coordinator?.showCategorySelectionFlow()
     }
-//    
-//    @objc private func addDateButton() {
-//        // Инициализация и отображение UIDatePicker
-//        var datePicker = datePicker
-//        datePicker.preferredDatePickerStyle = .compact
-//        datePicker.datePickerMode = .date
-//        let dateFormatter = DateFormatter()
-//        dateFormatter.dateFormat = "dd.MM.yyyy"
-//        datePicker.locale = Locale(identifier: "ru_RU")
-//        datePicker.accessibilityLabel = dateFormatter.string(from: datePicker.date)
-//        //   datePicker.addTarget(self, action: #selector(dateChangedLabel), for: .valueChanged)
-//        
-//        let alert = UIAlertController(title: "Выберите дату", message: "\n\n\n\n\n\n\n", preferredStyle: .alert)
-//        alert.view.addSubview(datePicker)
-//        
-//        datePicker.translatesAutoresizingMaskIntoConstraints = false
-//        NSLayoutConstraint.activate([
-//            datePicker.heightAnchor.constraint(equalToConstant: 200),
-//            datePicker.centerXAnchor.constraint(equalTo: alert.view.centerXAnchor),
-//            datePicker.centerYAnchor.constraint(equalTo: alert.view.centerYAnchor)
-//        ])
-//        
-//        alert.addAction(UIAlertAction(title: "Готово", style: .cancel) { _ in
-//            let dateFormatter = DateFormatter()
-//            dateFormatter.dateFormat = "dd.MM.yyyy"
-//            var  dateLabel = dateFormatter.string(from: datePicker.date)
-//    //        self.addDate.configure(with: dateLabel)
-//
-//            print("Кнопка Отмена нажата")
-//        })
-//        present(alert, animated: true, completion: nil)
-//    }
     
     func setupNote() {
         addNote.delegate = self
@@ -211,7 +170,6 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     func addSubviews() {
         view.addSubview(addDate)
-//        addDate.addSubview(datePicker)
         view.addSubview(addMoney)
         view.addSubview(addNote)
         addNote.addSubview(placeholderLabel)
@@ -260,18 +218,18 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         if newCategory == .add {
             view.addSubview(addCategory)
             constraints += [
-                addCategory.topAnchor.constraint(equalTo: customNavigationBar.bottomAnchor, constant: 20),
+                addCategory.bottomAnchor.constraint(equalTo: addDate.topAnchor, constant: -12),
                 addCategory.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
                 addCategory.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-                addCategory.heightAnchor.constraint(equalToConstant: 44)
+                addCategory.heightAnchor.constraint(equalToConstant: 50)
             ]
         } else {
             view.addSubview(changeCategory)
             constraints += [
-                changeCategory.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 45),
+                changeCategory.bottomAnchor.constraint(equalTo: addDate.topAnchor, constant: -12),
                 changeCategory.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
                 changeCategory.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-                changeCategory.heightAnchor.constraint(equalToConstant: 48)
+                changeCategory.heightAnchor.constraint(equalToConstant: 50)
             ]
         }
         NSLayoutConstraint.activate(constraints)

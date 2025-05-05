@@ -437,7 +437,7 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
                 cell.categoryMoney.text = expense.category
                 let amount = expense.formattedAsRuble
                 cell.labelMoneyCash.text = amount
-                cell.noteMoney.text = expense.expense.formatted()
+                cell.noteMoney.text = expense.note
             }
             return cell
         } else {
