@@ -101,37 +101,72 @@ final class MoneyTextField: UITextField {
 }
 
 extension MoneyTextField: UITextFieldDelegate {
-    // Метод делегата для изменения текста
-       func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-           let currentText = textField.text ?? ""
-           let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
-           
-           // Убираем все символы, кроме цифр
-           let digitsOnly = updatedText.replacingOccurrences(of: "\\D", with: "", options: .regularExpression)
-           
-           // Форматируем строку, добавляя пробелы для разделения тысяч
-           let formattedText = formatCurrency(digitsOnly)
-           
-           // Обновляем текст в текстовом поле
-           textField.text = formattedText
-           return false // Возвращаем false, чтобы предотвратить стандартное поведение
-       }
-       
-       private func formatCurrency(_ number: String) -> String {
-           var formatted = ""
-           var count = 0
-           
-           // Разбиваем строку на массив символов
-           for char in number.reversed() {
-               if count == 3 {
-                   formatted.append(" ")
-                   count = 0
-               }
-               formatted.append(char)
-               count += 1
-           }
-           
-           // Возвращаем отформатированное число
-           return String(formatted.reversed())
-       }
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+        let currentText = textField.text ?? ""
+        
+        // Обработка удаления
+        if string.isEmpty {
+            let newText = (currentText as NSString).replacingCharacters(in: range, with: string)
+            textField.text = newText
+            return false
+        }
+        
+        // Проверяем, что вводится только одна запятая
+        if string == "," {
+            if currentText.contains(",") {
+                return false // Не позволяем ввести вторую запятую
+            }
+            return true
+        }
+        
+        // Проверяем количество знаков после запятой
+        if let commaIndex = currentText.firstIndex(of: ",") {
+            let decimalPart = currentText[commaIndex...].dropFirst()
+            if decimalPart.count >= 2 && range.location > commaIndex.utf16Offset(in: currentText) {
+                return false // Не позволяем ввести больше 2 знаков после запятой
+            }
+        }
+        
+        // Проверяем, что вводится только цифра
+        if !string.isEmpty && !string.allSatisfy({ $0.isNumber }) {
+            return false
+        }
+        
+        // Формируем новый текст
+        let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
+        
+        // Форматируем целую часть числа
+        let components = updatedText.components(separatedBy: ",")
+        if let integerPart = components.first {
+            let formattedInteger = formatCurrency(integerPart)
+            if components.count > 1 {
+                textField.text = formattedInteger + "," + components[1]
+            } else {
+                textField.text = formattedInteger
+            }
+        }
+        
+        return false
+    }
+    
+    private func formatCurrency(_ number: String) -> String {
+        // Убираем все пробелы перед форматированием
+        let cleanNumber = number.replacingOccurrences(of: " ", with: "")
+        
+        var formatted = ""
+        var count = 0
+        
+        // Разбиваем строку на массив символов
+        for char in cleanNumber.reversed() {
+            if count == 3 {
+                formatted.append(" ")
+                count = 0
+            }
+            formatted.append(char)
+            count += 1
+        }
+        
+        // Возвращаем отформатированное число
+        return String(formatted.reversed())
+    }
 }

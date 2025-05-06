@@ -85,7 +85,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         let addMoney = MoneyTextField(placeholder: "Введите сумму")
         addMoney.setupToggleButton(Asset.Icon.currencyRuble.rawValue)
         addMoney.textColor = .etCards
-        addMoney.keyboardType = .numberPad
+        addMoney.keyboardType = .decimalPad
         addMoney.addTarget(self, action: #selector(textFieldChanged), for: .editingChanged)
         return addMoney
     }()
@@ -242,11 +242,47 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     @objc
     func textFieldChanged() {
+        // Форматируем введенное значение
+        if let text = addMoney.text?.replacingOccurrences(of: ",", with: ".") {
+            let components = text.components(separatedBy: ".")
+            if components.count > 2 {
+                // Если введено больше одной точки, оставляем только первую
+                let firstPart = components[0]
+                let secondPart = components[1]
+                addMoney.text = firstPart + "." + secondPart
+            }
+            
+            // Ограничиваем количество знаков после запятой до 2
+            if let decimalPart = components.last, components.count > 1 {
+                if decimalPart.count > 2 {
+                    let index = decimalPart.index(decimalPart.startIndex, offsetBy: 2)
+                    let truncatedDecimal = decimalPart[..<index]
+                    addMoney.text = components[0] + "." + truncatedDecimal
+                }
+            }
+        }
+        
         updateSaveButton()
     }
     
+    @objc private func addComma() {
+        if let text = addMoney.text, !text.contains(",") {
+            addMoney.text = text + ","
+        }
+    }
+    
+    @objc private func doneButtonTapped() {
+        addMoney.resignFirstResponder()
+    }
+    
     func updateSaveButton() {
-        saveButton.isEnabled = addMoney.text?.isEmpty == false && Double(addMoney.text ?? "") != nil
+        if let text = addMoney.text?.replacingOccurrences(of: ",", with: "."),
+           let amount = Double(text) {
+            saveButton.isEnabled = amount > 0
+        } else {
+            saveButton.isEnabled = false
+        }
+        
         if saveButton.isEnabled {
             saveButton.backgroundColor = .etAccent
         } else {

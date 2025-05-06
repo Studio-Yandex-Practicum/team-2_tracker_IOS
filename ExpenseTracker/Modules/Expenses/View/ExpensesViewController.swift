@@ -425,26 +425,18 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if let cell = expenseMoneyTable.dequeueReusableCell(withIdentifier: "ExpensesTableCell", for: indexPath) as? ExpensesTableCell {
-            cell.contentView.backgroundColor = .etBackground
-            cell.separatorInset = UIEdgeInsets.zero
-            cell.selectionStyle = .none
-            cell.translatesAutoresizingMaskIntoConstraints = true
-    
-            let dateKeys = Array(expensesByDate.keys)
-            let dateKey = dateKeys.sorted(by: >)
-            if let expense = expensesByDate[dateKey[indexPath.section]]?[indexPath.row] {
-                cell.categoryMoney.text = expense.category
-                let amount = expense.formattedAsRuble
-                cell.labelMoneyCash.text = amount
-                cell.noteMoney.text = expense.note
-            }
-            return cell
-        } else {
-            // Обработка случая, когда не удалось произвести преобразование
+        guard let cell = expenseMoneyTable.dequeueReusableCell(withIdentifier: "ExpensesTableCell", for: indexPath) as? ExpensesTableCell else {
             print("Failed to dequeue a cell of type ExpensesTableCell")
             return UITableViewCell()
         }
+        
+        let dateKeys = Array(expensesByDate.keys)
+        let dateKey = dateKeys.sorted(by: >)
+        if let expense = expensesByDate[dateKey[indexPath.section]]?[indexPath.row] {
+            cell.configure(with: expense)
+        }
+        
+        return cell
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -484,7 +476,7 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
             completion(true)
         }
         
-        addExpense.image =  UIImage(named: "edit")?.withTintColor(.etButtonLabel)
+        addExpense.image = UIImage(named: "edit")?.withTintColor(.etButtonLabel)
         addExpense.backgroundColor = .etOrange
         
         return UISwipeActionsConfiguration(actions: [delete, addExpense])

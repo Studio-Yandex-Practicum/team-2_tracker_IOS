@@ -75,6 +75,7 @@ final class ExpensesTableCell: UITableViewCell {
     }()
     
     // MARK: - Initialization
+    
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         setupUI()
@@ -135,5 +136,35 @@ final class ExpensesTableCell: UITableViewCell {
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
             labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16)
         ])
+    }
+    
+    // MARK: - Configuration
+    
+    func configure(with expense: Expense) {
+        categoryMoney.text = expense.category
+        noteMoney.text = expense.note
+        
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.groupingSeparator = " "
+        numberFormatter.decimalSeparator = ","
+        
+        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: expense.expense)) {
+            // Проверяем, заканчивается ли число на ",00"
+            if formattedAmount.hasSuffix(",00") {
+                // Убираем ",00" из строки
+                let wholeNumber = String(formattedAmount.dropLast(3))
+                labelMoneyCash.text = wholeNumber + " " + currency
+            } else {
+                labelMoneyCash.text = formattedAmount + " " + currency
+            }
+        }
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        categoryMoney.text = nil
+        noteMoney.text = nil
+        labelMoneyCash.text = nil
     }
 }
