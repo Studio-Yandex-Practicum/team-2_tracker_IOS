@@ -204,12 +204,19 @@ final class AnalyticsViewController: UIViewController {
     
     private func updateDateLabel() {
         if let dateRange = viewModel.getSelectedDateRange() {
-            dateLabel.text = dateFormatter.string(from: dateRange.start) + " - " + dateFormatter.string(from: dateRange.end)
+            let startDate = dateFormatter.string(from: dateRange.start)
+            let endDate = dateFormatter.string(from: dateRange.end)
+            dateLabel.text = startDate + " - " + endDate
         } else if let periodType = getSelectedPeriodType() {
             let (startDate, endDate) = calculatePeriod(for: viewModel.dayToday.value, periodType: periodType)
-            let textForCurrentDate = dateFormatter.string(from: startDate)
-            let startOfCurrentDay = Calendar.current.startOfDay(for: viewModel.dayToday.value)
-            dateLabel.text = startOfCurrentDay == startDate ? textForCurrentDate : dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
+            let startDateString = dateFormatter.string(from: startDate)
+            let endDateString = dateFormatter.string(from: endDate)
+            
+            if Calendar.current.isDate(startDate, inSameDayAs: endDate) {
+                dateLabel.text = startDateString
+            } else {
+                dateLabel.text = startDateString + " - " + endDateString
+            }
         } else {
             dateLabel.text = "Аналитика"
         }
@@ -331,6 +338,7 @@ final class AnalyticsViewController: UIViewController {
         let filteredExpenses = getFilteredExpenses()
         viewModel.updateExpensesData(with: filteredExpenses)
         updateUI(with: filteredExpenses)
+        updateDateLabel()
         reloadTable()
     }
     
@@ -572,21 +580,25 @@ final class AnalyticsViewController: UIViewController {
     @objc private func dayButtonTapped() {
         viewModel.setSelectedDateRange(nil)
         setupFilterButtonState(for: dayButton, with: .day)
+        updateDateLabel()
     }
     
     @objc private func weekButtonTapped() {
         viewModel.setSelectedDateRange(nil)
         setupFilterButtonState(for: weekButton, with: .week)
+        updateDateLabel()
     }
     
     @objc private func monthButtonTapped() {
         viewModel.setSelectedDateRange(nil)
         setupFilterButtonState(for: monthButton, with: .month)
+        updateDateLabel()
     }
     
     @objc private func yearButtonTapped() {
         viewModel.setSelectedDateRange(nil)
         setupFilterButtonState(for: yearButton, with: .year)
+        updateDateLabel()
     }
     
     @objc private func calendarButtonTapped() {
@@ -641,6 +653,7 @@ extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
 extension AnalyticsViewController: DateRangeCalendarViewDelegate {
     func didSelectDateRange(start: Date, end: Date) {
         viewModel.setTempDateRange((start, end))
+        updateDateLabel()
     }
     
     func didConfirmDateRange() {
@@ -648,6 +661,7 @@ extension AnalyticsViewController: DateRangeCalendarViewDelegate {
             viewModel.setSelectedDateRange(dateRange)
             resetPeriodButtons()
             filterExpenses()
+            updateDateLabel()
             reloadTable()
         }
     }
