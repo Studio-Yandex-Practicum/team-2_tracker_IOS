@@ -28,6 +28,7 @@ final class ExpensesViewController: UIViewController {
         let dateLabel = UILabel()
         dateLabel.textColor = UIColor.etPrimaryLabel
         dateLabel.textAlignment = .center
+        dateLabel.font = AppTextStyle.h2.font
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
         return dateLabel
     }()
@@ -36,9 +37,9 @@ final class ExpensesViewController: UIViewController {
         let button = UIButton(type: .system)
         button.setImage(UIImage(named: Asset.Icon.btnAdd2.rawValue), for: .normal)
         button.addTarget(self, action: #selector(addExpense), for: .touchUpInside)
-        button.heightAnchor.constraint(equalToConstant: 56).isActive = true
-        button.widthAnchor.constraint(equalToConstant: 56).isActive = true
         button.translatesAutoresizingMaskIntoConstraints = false
+        button.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        button.widthAnchor.constraint(equalToConstant: 40).isActive = true
         return button
     }()
     
@@ -287,11 +288,11 @@ final class ExpensesViewController: UIViewController {
         
         var constraints = [
             
-            dateLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 56),
-            dateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            addCategoryButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            addCategoryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
-            addCategoryButton.topAnchor.constraint(equalTo: view.topAnchor, constant: 44),
-            addCategoryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
+            dateLabel.centerYAnchor.constraint(equalTo: addCategoryButton.centerYAnchor),
+            dateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
             labelMoney.topAnchor.constraint(equalTo: dateLabel.bottomAnchor, constant: 24),
             labelMoney.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -468,11 +469,6 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
             let changeVC = ChangeExpensesViewController(.change)
             
             self.navigationController?.pushViewController(changeVC, animated: true)
-          
-            self.navigationController?.setNavigationBarHidden(true, animated: .init())
-            changeVC.navigationController?.isNavigationBarHidden = true
-       //     self.navigationController?.isNavigationBarHidden.
-            print("Кнопка нажита")
             completion(true)
         }
         
