@@ -167,12 +167,14 @@ final class ExpensesViewController: UIViewController {
     private func dayButtonTapped() {
         selectedDateRange = nil
         setupFilterButtonState(for: dayButton, with: .day)
+        setupLayout()
     }
     
     @objc
     private func weekButtonTapped() {
         selectedDateRange = nil
         setupFilterButtonState(for: weekButton, with: .week)
+        setupLayout()
     }
     
     @objc
@@ -430,6 +432,8 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
             cell.separatorInset = UIEdgeInsets.zero
             cell.selectionStyle = .none
             cell.translatesAutoresizingMaskIntoConstraints = true
+            
+         
     
             let dateKeys = Array(expensesByDate.keys)
             let dateKey = dateKeys.sorted(by: >)
@@ -438,6 +442,8 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
                 let amount = expense.formattedAsRuble
                 cell.labelMoneyCash.text = amount
                 cell.noteMoney.text = expense.note
+                cell.setupCell()
+                
             }
             return cell
         } else {
@@ -455,13 +461,16 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         
         let delete = UIContextualAction(style: .normal, title: nil) { _, _, completion in
             
+           
             let alert = UIAlertController(title: "Уверены, что хотите удалить?", message: "", preferredStyle: .alert)
             
             alert.addAction(UIAlertAction(title: "Выход", style: .cancel, handler: nil))
             alert.addAction(UIAlertAction(title: "ОК", style: .default) { _ in
  
-                tableView.deleteRows(at: [indexPath], with: .automatic)
+                tableView.deleteRows(at: [indexPath].reversed(), with: .automatic)
                tableView.reloadData()
+                
+            
             })
             self.present(alert, animated: true)
             
@@ -474,13 +483,9 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         let addExpense = UIContextualAction(style: .normal, title: nil) { _, _, completion in
             
             let changeVC = ChangeExpensesViewController(.change)
-            
             self.navigationController?.pushViewController(changeVC, animated: true)
-          
             self.navigationController?.setNavigationBarHidden(true, animated: .init())
             changeVC.navigationController?.isNavigationBarHidden = true
-       //     self.navigationController?.isNavigationBarHidden.
-            print("Кнопка нажита")
             completion(true)
         }
         
@@ -489,6 +494,8 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         
         return UISwipeActionsConfiguration(actions: [delete, addExpense])
     }
+    
+//
     
     // Закругление углов секции таблицы
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {

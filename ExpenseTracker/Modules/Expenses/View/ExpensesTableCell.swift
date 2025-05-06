@@ -79,7 +79,7 @@ final class ExpensesTableCell: UITableViewCell {
     
     func setupCell() {
         
-        var noteMonewCell = noteMoney.text
+  //      guard var noteMonewCell = noteMoney.text?.isEmpty ?? nil else { return }
         
         var constraints = [
             
@@ -99,7 +99,8 @@ final class ExpensesTableCell: UITableViewCell {
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
             labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16) ]
         
-        if noteMonewCell != "" {
+        if noteMoney.text != "" {
+         //   print(noteMonewCell)
             
             backView.addSubview(categoryMoney)
             backView.addSubview(noteMoney)
