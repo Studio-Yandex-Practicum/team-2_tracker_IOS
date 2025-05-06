@@ -468,7 +468,7 @@ final class AnalyticsViewController: UIViewController {
         navigationController?.setNavigationBarHidden(true, animated: false)
         
         var constraints = [
-            dateLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 0),
+            dateLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             dateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             dateLabel.heightAnchor.constraint(equalToConstant: 40),
             
