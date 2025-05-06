@@ -2,6 +2,15 @@ import UIKit
 
 final class AnalyticsTableCell: UITableViewCell {
 
+    // MARK: - Model
+    struct AnalyticsCellModel {
+        let category: String
+        let amount: Decimal
+        let percentage: Double
+        let color: UIColor
+        let currency: String
+    }
+    
     var currency = Currency.ruble.rawValue
     
     private lazy var backView: UIView = {
@@ -70,9 +79,13 @@ final class AnalyticsTableCell: UITableViewCell {
     }
     
     func setupCell() {
+        // Базовые настройки ячейки
+        contentView.backgroundColor = .etBackground
+        separatorInset = UIEdgeInsets.zero
+        selectionStyle = .none
+        translatesAutoresizingMaskIntoConstraints = true
         
         var constraints = [
-            
             backView.topAnchor.constraint(equalTo: contentView.topAnchor),
             backView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             backView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
@@ -85,6 +98,8 @@ final class AnalyticsTableCell: UITableViewCell {
             
             expenceImage.centerYAnchor.constraint(equalTo: expenceView.centerYAnchor),
             expenceImage.centerXAnchor.constraint(equalTo: expenceView.centerXAnchor),
+            expenceImage.heightAnchor.constraint(equalToConstant: 20),
+            expenceImage.widthAnchor.constraint(equalToConstant: 20),
             
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
             labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16),
@@ -103,5 +118,32 @@ final class AnalyticsTableCell: UITableViewCell {
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    // MARK: - Configuration
+    func configure(with viewModel: AnalyticsCellModel) {
+        categoryMoney.text = viewModel.category
+        expenceView.backgroundColor = viewModel.color
+        
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.groupingSeparator = " "
+        numberFormatter.decimalSeparator = ","
+        
+        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: viewModel.amount)) {
+            labelMoneyCash.text = formattedAmount + " " + viewModel.currency
+        }
+        
+        // Округляем процент по правилам математического округления
+        let roundedPercentage = Int(round(viewModel.percentage))
+        percentMoney.text = "\(roundedPercentage)%"
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        categoryMoney.text = nil
+        labelMoneyCash.text = nil
+        percentMoney.text = nil
+        expenceView.backgroundColor = .etIconsBG
     }
 }

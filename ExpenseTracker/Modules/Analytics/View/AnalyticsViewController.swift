@@ -534,34 +534,23 @@ final class AnalyticsViewController: UIViewController {
     }
     
     private func configureCell(_ cell: AnalyticsTableCell, at indexPath: IndexPath) {
-        cell.contentView.backgroundColor = .etBackground
-        cell.separatorInset = UIEdgeInsets.zero
-        cell.selectionStyle = .none
-        cell.translatesAutoresizingMaskIntoConstraints = true
-        
         let category = viewModel.getSortedCategories()[indexPath.row]
         let expensesByCategory = viewModel.getExpensesByCategory()
         
         if let expenses = expensesByCategory[category] {
             let totalAmount = expenses.reduce(0) { $0 + $1.expense }
-            
-            let numberFormatter = NumberFormatter()
-            numberFormatter.numberStyle = .decimal
-            numberFormatter.minimumFractionDigits = 2
-            numberFormatter.maximumFractionDigits = 2
-            numberFormatter.groupingSeparator = " "
-            numberFormatter.decimalSeparator = ","
-            
-            if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-                cell.labelMoneyCash.text = formattedAmount + " " + viewModel.currency.value
-            }
-            
-            cell.categoryMoney.text = category
-            cell.expenceView.backgroundColor = viewModel.colorCategory.value[indexPath.row % viewModel.colorCategory.value.count]
-            
             let percentage = (NSDecimalNumber(decimal: totalAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue) * 100
-            let roundedPercentage = Int(ceil(percentage))
-            cell.percentMoney.text = "\(roundedPercentage)%"
+            let color = viewModel.colorCategory.value[indexPath.row % viewModel.colorCategory.value.count]
+            
+            let cellViewModel = AnalyticsTableCell.AnalyticsCellModel(
+                category: category,
+                amount: totalAmount,
+                percentage: percentage,
+                color: color,
+                currency: viewModel.currency.value
+            )
+            
+            cell.configure(with: cellViewModel)
         }
     }
     
