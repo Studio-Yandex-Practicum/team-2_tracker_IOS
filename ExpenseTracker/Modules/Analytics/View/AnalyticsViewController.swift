@@ -3,23 +3,10 @@ import SwiftUICore
 
 final class AnalyticsViewController: UIViewController {
     
+    // MARK: - Properties
+    
     weak var coordinator: AnalyticsCoordinator?
-    
-    var viewModel = ExpensesViewModel()
-    var totalAmount: Decimal = 12345
-    var currency = Currency.ruble.rawValue
-    var dayToday = Date(timeIntervalSinceNow: 0)
-    var colorCategory = [UIColor.etbRed, UIColor.etOrange, UIColor.etGreen, UIColor.etBlue,
-                         UIColor.etPurple, UIColor.etPink, UIColor.etYellow, UIColor.etGrayBlue]
-    
-    private var expensesByDate: [Date: [Expense]] = [:]
-    private var selectedCategories: Set<String>?
-    private var selectedDateRange: (start: Date, end: Date)?
-    private var tempDateRange: (start: Date, end: Date)?
-    
-    private var expensesByCategory: [String: [Expense]] = [:]
-    private var sortedCategories: [String] = []
-    private var isAscending = false
+    private let viewModel: AnalyticsViewModel
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -28,7 +15,7 @@ final class AnalyticsViewController: UIViewController {
         return formatter
     }()
     
-    // MARK: - UI components
+    // MARK: - UI Components
     
     private lazy var dateLabel: UILabel = {
         let dateLabel = UILabel()
@@ -45,18 +32,6 @@ final class AnalyticsViewController: UIViewController {
         labelMoney.textColor = .etPrimaryLabel
         labelMoney.font = AppTextStyle.h1.font
         labelMoney.translatesAutoresizingMaskIntoConstraints = false
-        
-        let numberFormatter = NumberFormatter()
-        numberFormatter.numberStyle = .decimal
-        numberFormatter.minimumFractionDigits = 2
-        numberFormatter.maximumFractionDigits = 2
-        numberFormatter.groupingSeparator = " "
-        numberFormatter.decimalSeparator = ","
-        
-        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-            labelMoney.text = formattedAmount + " " + currency
-        }
-        
         return labelMoney
     }()
 
@@ -144,140 +119,59 @@ final class AnalyticsViewController: UIViewController {
         return addExpensesLabel
     }()
     
-    private func setupFilterButtonState(for button: UIButton, with period: PeriodType) {
-        button.isSelected.toggle()
-        [dayButton, weekButton, monthButton, yearButton].forEach {
-            $0.backgroundColor = button == $0 && $0.isSelected ? .etAccent : .etCardsToggled
-            let titleColor = button == $0 && $0.isSelected ? UIColor.etButtonLabel : UIColor.etCards
-            $0.setTitleColor(titleColor, for: .normal)
-            
-            if button != $0 {
-                $0.isSelected = false
-            }
-            setFilters(for: button, with: period)
+    // MARK: - Initialization
+    init(viewModel: AnalyticsViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+        setupBindings()
+        loadInitialData()
+    }
+    
+    // MARK: - Setup
+    private func setupUI() {
+        view.backgroundColor = .etBackground
+        expenseCategoryTable.register(AnalyticsTableCell.self, forCellReuseIdentifier: "ExpenseCategoryCell")
+        addSubviews()
+        setupLayout()
+    }
+    
+    private func setupBindings() {
+        // Привязываем обновление UI к изменениям в ViewModel
+        viewModel.totalAmount.bind { [weak self] amount in
+            self?.updateMoneyLabel(with: amount)
+        }
+        
+        viewModel.currency.bind { [weak self] currency in
+            self?.updateMoneyLabel(with: self?.viewModel.totalAmount.value ?? 0)
+        }
+        
+        viewModel.dayToday.bind { [weak self] _ in
+            self?.updateDateLabel()
         }
     }
     
-    private func setFilters(for button: UIButton, with period: PeriodType) {
-        let selectedDate = dayToday
-        let period = button.isSelected ? period : nil
-        filterExpenses()
-    }
-    
-    @objc
-    private func dayButtonTapped() {
-        selectedDateRange = nil
-        setupFilterButtonState(for: dayButton, with: .day)
-    }
-    
-    @objc
-    private func weekButtonTapped() {
-        selectedDateRange = nil
-        setupFilterButtonState(for: weekButton, with: .week)
-    }
-    
-    @objc
-    private func monthButtonTapped() {
-        selectedDateRange = nil
-        setupFilterButtonState(for: monthButton, with: .month)
-    }
-    
-    @objc
-    private func yearButtonTapped() {
-        selectedDateRange = nil
-        setupFilterButtonState(for: yearButton, with: .year)
-    }
-    
-    @objc private func calendarButtonTapped() {
-        DateRangeCalendarView.show(in: self, delegate: self)
-    }
-    
-    @objc private func sortButtonTapped() {
-        isAscending.toggle()
-        updateSortButtonImage()
-        sortCategories()
+    private func loadInitialData() {
+        let allExpenses = viewModel.getAllExpenses()
+        viewModel.updateExpensesData(with: allExpenses)
+        updateDonutChart()
         expenseCategoryTable.reloadData()
     }
     
-    private func updateSortButtonImage() {
-        let imageName = isAscending ? Asset.Icon.arrowSortUp.rawValue : Asset.Icon.arrowSortDown.rawValue
-        sortedCategoryButton.setImage(UIImage(named: imageName)?.withTintColor(.etPrimaryLabel), for: .normal)
-    }
-    
-    private func sortCategories() {
-        sortedCategories = expensesByCategory.keys.sorted { category1, category2 in
-            let sum1 = expensesByCategory[category1]?.reduce(0) { $0 + $1.expense } ?? 0
-            let sum2 = expensesByCategory[category2]?.reduce(0) { $0 + $1.expense } ?? 0
-            return isAscending ? sum1 < sum2 : sum1 > sum2
-        }
-    }
-    
-    private func filterExpenses() {
-        let filteredExpenses = getFilteredExpenses()
-        updateExpensesData(with: filteredExpenses)
-        updateUI(with: filteredExpenses)
-    }
-    
-    private func getFilteredExpenses() -> [Expense] {
-        var filteredExpenses: [Expense]
-        
-        // Получаем расходы в зависимости от выбранного периода
-        if let dateRange = selectedDateRange {
-            filteredExpenses = getExpensesForDateRange(dateRange)
-            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etAccent), for: .normal)
-        } else if let periodType = getSelectedPeriodType() {
-            filteredExpenses = getExpensesForPeriod(periodType)
-            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etCards), for: .normal)
-        } else {
-            filteredExpenses = viewModel.getAllExpenses()
-            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etCards), for: .normal)
-        }
-        
-        // Фильтрация по категориям
-        if let selectedCategories = selectedCategories, !selectedCategories.isEmpty {
-            filteredExpenses = filteredExpenses.filter { expense in
-                selectedCategories.contains(expense.category.description)
-            }
-        }
-        
-        return filteredExpenses
-    }
-    
-    private func getExpensesForDateRange(_ dateRange: (start: Date, end: Date)) -> [Expense] {
-        let startOfDay = Calendar.current.startOfDay(for: dateRange.start)
-        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: dateRange.end) ?? dateRange.end
-        
-        let expensesByDate = viewModel.getExpensesForPeriod(startDate: startOfDay, endDate: endOfDay)
-        return expensesByDate.values.flatMap { $0 }
-    }
-    
-    private func getExpensesForPeriod(_ periodType: PeriodType) -> [Expense] {
-        let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
-        let startOfDay = Calendar.current.startOfDay(for: startDate)
-        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
-        
-        let expensesByDate = viewModel.getExpensesForPeriod(startDate: startOfDay, endDate: endOfDay)
-        return expensesByDate.values.flatMap { $0 }
-    }
-    
-    private func updateExpensesData(with expenses: [Expense]) {
-        // Группируем расходы по категориям
-        expensesByCategory = Dictionary(grouping: expenses) { $0.category }
-        
-        // Сортируем категории
-        sortCategories()
-        
-        // Обновляем общую сумму
-        totalAmount = expenses.reduce(0, { $0 + $1.expense })
-        
-        updateMoneyLabel()
-        updateDateLabel()
-    }
-    
-    private func updateMoneyLabel() {
+    // MARK: - UI Updates
+    private func updateMoneyLabel(with amount: Decimal) {
         let numberFormatter = NumberFormatter()
         numberFormatter.numberStyle = .decimal
-        if expensesByCategory.isEmpty {
+        if viewModel.getExpensesByCategory().isEmpty {
             numberFormatter.minimumFractionDigits = 0
             numberFormatter.maximumFractionDigits = 0
         } else {
@@ -287,18 +181,18 @@ final class AnalyticsViewController: UIViewController {
         numberFormatter.groupingSeparator = " "
         numberFormatter.decimalSeparator = ","
         
-        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-            labelMoney.text = formattedAmount + " " + currency
+        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: amount)) {
+            labelMoney.text = formattedAmount + " " + viewModel.currency.value
         }
     }
     
     private func updateDateLabel() {
-        if let dateRange = selectedDateRange {
+        if let dateRange = viewModel.getSelectedDateRange() {
             dateLabel.text = dateFormatter.string(from: dateRange.start) + " - " + dateFormatter.string(from: dateRange.end)
         } else if let periodType = getSelectedPeriodType() {
-            let (startDate, endDate) = calculatePeriod(for: dayToday, periodType: periodType)
+            let (startDate, endDate) = calculatePeriod(for: viewModel.dayToday.value, periodType: periodType)
             let textForCurrentDate = dateFormatter.string(from: startDate)
-            let startOfCurrentDay = Calendar.current.startOfDay(for: dayToday)
+            let startOfCurrentDay = Calendar.current.startOfDay(for: viewModel.dayToday.value)
             dateLabel.text = startOfCurrentDay == startDate ? textForCurrentDate : dateFormatter.string(from: startDate) + " - " + dateFormatter.string(from: endDate)
         } else {
             dateLabel.text = "Аналитика"
@@ -306,7 +200,7 @@ final class AnalyticsViewController: UIViewController {
     }
     
     private func updateUI(with expenses: [Expense]) {
-        if expensesByCategory.isEmpty {
+        if viewModel.getExpensesByCategory().isEmpty {
             showEmptyState()
         } else {
             showTableState()
@@ -345,28 +239,28 @@ final class AnalyticsViewController: UIViewController {
         var chartData: [(value: Double, color: UIColor)] = []
         
         // Добавляем первую категорию в начало
-        if let firstCategory = sortedCategories.first,
-           let expenses = expensesByCategory[firstCategory] {
+        if let firstCategory = viewModel.getSortedCategories().first,
+           let expenses = viewModel.getExpensesByCategory()[firstCategory] {
             let categoryAmount = expenses.reduce(0) { $0 + $1.expense }
-            let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: totalAmount).doubleValue
-            chartData.append((value: percentage, color: colorCategory[0]))
+            let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue
+            chartData.append((value: percentage, color: viewModel.colorCategory.value[0]))
         }
         
         // Добавляем остальные категории
-        for (index, category) in sortedCategories.dropFirst().enumerated() {
-            if let expenses = expensesByCategory[category] {
+        for (index, category) in viewModel.getSortedCategories().dropFirst().enumerated() {
+            if let expenses = viewModel.getExpensesByCategory()[category] {
                 let categoryAmount = expenses.reduce(0) { $0 + $1.expense }
-                let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: totalAmount).doubleValue
-                chartData.append((value: percentage, color: colorCategory[(index + 1) % colorCategory.count]))
+                let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue
+                chartData.append((value: percentage, color: viewModel.colorCategory.value[(index + 1) % viewModel.colorCategory.value.count]))
             }
         }
         
         // Добавляем первую категорию в конец
-        if let firstCategory = sortedCategories.first,
-           let expenses = expensesByCategory[firstCategory] {
+        if let firstCategory = viewModel.getSortedCategories().first,
+           let expenses = viewModel.getExpensesByCategory()[firstCategory] {
             let categoryAmount = expenses.reduce(0) { $0 + $1.expense }
-            let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: totalAmount).doubleValue
-            chartData.append((value: percentage, color: colorCategory[0]))
+            let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue
+            chartData.append((value: percentage, color: viewModel.colorCategory.value[0]))
         }
         
         donutChartView.configure(with: chartData, overlapAngle: 8)
@@ -395,48 +289,101 @@ final class AnalyticsViewController: UIViewController {
         animateDonutChart()
     }
     
+    // MARK: - Filter Methods
+    private func setupFilterButtonState(for button: UIButton, with period: PeriodType) {
+        button.isSelected.toggle()
+        [dayButton, weekButton, monthButton, yearButton].forEach {
+            $0.backgroundColor = button == $0 && $0.isSelected ? .etAccent : .etCardsToggled
+            let titleColor = button == $0 && $0.isSelected ? UIColor.etButtonLabel : UIColor.etCards
+            $0.setTitleColor(titleColor, for: .normal)
+            
+            if button != $0 {
+                $0.isSelected = false
+            }
+        }
+        filterExpenses()
+    }
+    
+    private func filterExpenses() {
+        let filteredExpenses = getFilteredExpenses()
+        viewModel.updateExpensesData(with: filteredExpenses)
+        updateUI(with: filteredExpenses)
+    }
+    
+    private func getFilteredExpenses() -> [Expense] {
+        var filteredExpenses: [Expense]
+        
+        // Получаем расходы в зависимости от выбранного периода
+        if let dateRange = viewModel.getSelectedDateRange() {
+            filteredExpenses = getExpensesForDateRange(dateRange)
+            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etAccent), for: .normal)
+        } else if let periodType = getSelectedPeriodType() {
+            filteredExpenses = getExpensesForPeriod(periodType)
+            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etCards), for: .normal)
+        } else {
+            filteredExpenses = viewModel.getAllExpenses()
+            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etCards), for: .normal)
+        }
+        
+        // Фильтрация по категориям
+        if let selectedCategories = viewModel.getSelectedCategories(), !selectedCategories.isEmpty {
+            filteredExpenses = filteredExpenses.filter { expense in
+                selectedCategories.contains(expense.category.description)
+            }
+        }
+        
+        return filteredExpenses
+    }
+    
+    private func getExpensesForDateRange(_ dateRange: (start: Date, end: Date)) -> [Expense] {
+        let startOfDay = Calendar.current.startOfDay(for: dateRange.start)
+        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: dateRange.end) ?? dateRange.end
+        
+        let expensesByDate = viewModel.getExpensesForPeriod(startDate: startOfDay, endDate: endOfDay)
+        return expensesByDate.values.flatMap { $0 }
+    }
+    
+    private func getExpensesForPeriod(_ periodType: PeriodType) -> [Expense] {
+        let (startDate, endDate) = calculatePeriod(for: viewModel.dayToday.value, periodType: periodType)
+        let startOfDay = Calendar.current.startOfDay(for: startDate)
+        let endOfDay = Calendar.current.date(bySettingHour: 23, minute: 59, second: 59, of: endDate) ?? endDate
+        
+        let expensesByDate = viewModel.getExpensesForPeriod(startDate: startOfDay, endDate: endOfDay)
+        return expensesByDate.values.flatMap { $0 }
+    }
+    
+    private func calculatePeriod(for selectedDate: Date, periodType: PeriodType) -> (Date, Date) {
+        let currentCalendar = Calendar.current
+        var startDate: Date
+        var endDate = selectedDate
+        
+        switch periodType {
+        case .day:
+            startDate = currentCalendar.startOfDay(for: selectedDate)
+            endDate = selectedDate
+        case .week:
+            endDate = selectedDate
+            // Находим начало недели, отнимая 6 дней от текущего дня
+            startDate = currentCalendar.date(byAdding: .day, value: -7, to: endDate) ?? selectedDate
+        case .month:
+            endDate = selectedDate
+            // Находим начало месяца, отнимая от текущего дня количество дней в месяце
+            let range = currentCalendar.range(of: .day, in: .month, for: selectedDate)!
+            startDate = currentCalendar.date(byAdding: .day, value: -range.count - 1, to: endDate)!
+        case .year:
+            endDate = selectedDate
+            // Находим год, отнимая от текущего дня год
+            startDate = currentCalendar.date(byAdding: .year, value: -1, to: endDate)!
+        }
+        return (startDate, endDate)
+    }
+    
     private func getSelectedPeriodType() -> PeriodType? {
         if dayButton.isSelected { return .day }
         if weekButton.isSelected { return .week }
         if monthButton.isSelected { return .month }
         if yearButton.isSelected { return .year }
         return nil
-    }
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        self.expenseCategoryTable.register(AnalyticsTableCell.self, forCellReuseIdentifier: "ExpenseCategoryCell")
-        view.backgroundColor = .etBackground
-        
-        // Инициализируем данные до добавления подпредставлений
-        let allExpenses = viewModel.getAllExpenses()
-        expensesByCategory = Dictionary(grouping: allExpenses) { $0.category }
-        totalAmount = allExpenses.reduce(0) { $0 + $1.expense }
-        
-        let numberFormatter = NumberFormatter()
-        numberFormatter.numberStyle = .decimal
-        if expensesByCategory.isEmpty {
-            numberFormatter.minimumFractionDigits = 0
-            numberFormatter.maximumFractionDigits = 0
-        } else {
-            numberFormatter.minimumFractionDigits = 2
-            numberFormatter.maximumFractionDigits = 2
-        }
-        numberFormatter.groupingSeparator = " "
-        numberFormatter.decimalSeparator = ","
-        
-        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-            labelMoney.text = formattedAmount + " " + currency
-        }
-        
-        dateLabel.text = "Аналитика"
-        
-        addSubviews()
-        setupLayout()
-        sortCategories()
-        updateDonutChart()
-        expenseCategoryTable.reloadData()
     }
     
     func addSubviews() {
@@ -456,7 +403,7 @@ final class AnalyticsViewController: UIViewController {
         calendarStack.addArrangedSubview(yearButton)
         
         // Добавляем таблицу или сообщение в зависимости от наличия данных
-        if expensesByCategory.isEmpty {
+        if viewModel.getExpensesByCategory().isEmpty {
             view.addSubview(noExpensesLabel)
             view.addSubview(addExpensesLabel)
         } else {
@@ -495,7 +442,7 @@ final class AnalyticsViewController: UIViewController {
             sortedCategoryButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6)
         ]
         
-        if expensesByCategory.isEmpty {
+        if viewModel.getExpensesByCategory().isEmpty {
             constraints += [
                 noExpensesLabel.topAnchor.constraint(equalTo: sortedCategoryButton.bottomAnchor, constant: 96),
                 noExpensesLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
@@ -515,32 +462,6 @@ final class AnalyticsViewController: UIViewController {
         }
         
         NSLayoutConstraint.activate(constraints)
-    }
-    
-    private func calculatePeriod(for selectedDate: Date, periodType: PeriodType) -> (Date, Date) {
-        let currentCalendar = Calendar.current
-        var startDate: Date
-        var endDate = selectedDate
-        
-        switch periodType {
-        case .day:
-            startDate = currentCalendar.startOfDay(for: selectedDate)
-            endDate = selectedDate
-        case .week:
-            endDate = selectedDate
-            // Находим начало недели, отнимая 6 дней от текущего дня
-            startDate = currentCalendar.date(byAdding: .day, value: -7, to: endDate) ?? selectedDate
-        case .month:
-            endDate = selectedDate
-            // Находим начало месяца, отнимая от текущего дня количество дней в месяце
-            let range = currentCalendar.range(of: .day, in: .month, for: selectedDate)!
-            startDate = currentCalendar.date(byAdding: .day, value: -range.count - 1, to: endDate)!
-        case .year:
-            endDate = selectedDate
-            // Находим год, отнимая от текущего дня год
-            startDate = currentCalendar.date(byAdding: .year, value: -1, to: endDate)!
-        }
-        return (startDate, endDate)
     }
     
     private func setupEmptyStateConstraints() {
@@ -568,50 +489,88 @@ final class AnalyticsViewController: UIViewController {
             expenseCategoryTable.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
     }
+    
+    // MARK: - Actions
+    @objc private func sortButtonTapped() {
+        viewModel.toggleSortOrder()
+        updateSortButtonImage()
+        expenseCategoryTable.reloadData()
+    }
+    
+    private func updateSortButtonImage() {
+        let imageName = viewModel.getIsAscending() ? Asset.Icon.arrowSortUp.rawValue : Asset.Icon.arrowSortDown.rawValue
+        sortedCategoryButton.setImage(UIImage(named: imageName)?.withTintColor(.etPrimaryLabel), for: .normal)
+    }
+    
+    @objc private func dayButtonTapped() {
+        viewModel.setSelectedDateRange(nil)
+        setupFilterButtonState(for: dayButton, with: .day)
+    }
+    
+    @objc private func weekButtonTapped() {
+        viewModel.setSelectedDateRange(nil)
+        setupFilterButtonState(for: weekButton, with: .week)
+    }
+    
+    @objc private func monthButtonTapped() {
+        viewModel.setSelectedDateRange(nil)
+        setupFilterButtonState(for: monthButton, with: .month)
+    }
+    
+    @objc private func yearButtonTapped() {
+        viewModel.setSelectedDateRange(nil)
+        setupFilterButtonState(for: yearButton, with: .year)
+    }
+    
+    @objc private func calendarButtonTapped() {
+        DateRangeCalendarView.show(in: self, delegate: self)
+    }
 }
 
-// MARK: - TableView Function
+// MARK: - TableView
 extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return sortedCategories.count
+        return viewModel.getSortedCategories().count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if let cell = expenseCategoryTable.dequeueReusableCell(withIdentifier: "ExpenseCategoryCell", for: indexPath) as? AnalyticsTableCell {
-            cell.contentView.backgroundColor = .etBackground
-            cell.separatorInset = UIEdgeInsets.zero
-            cell.selectionStyle = .none
-            cell.translatesAutoresizingMaskIntoConstraints = true
+        guard let cell = expenseCategoryTable.dequeueReusableCell(withIdentifier: "ExpenseCategoryCell", for: indexPath) as? AnalyticsTableCell else {
+            return UITableViewCell()
+        }
+        
+        configureCell(cell, at: indexPath)
+        return cell
+    }
+    
+    private func configureCell(_ cell: AnalyticsTableCell, at indexPath: IndexPath) {
+        cell.contentView.backgroundColor = .etBackground
+        cell.separatorInset = UIEdgeInsets.zero
+        cell.selectionStyle = .none
+        cell.translatesAutoresizingMaskIntoConstraints = true
+        
+        let category = viewModel.getSortedCategories()[indexPath.row]
+        let expensesByCategory = viewModel.getExpensesByCategory()
+        
+        if let expenses = expensesByCategory[category] {
+            let totalAmount = expenses.reduce(0) { $0 + $1.expense }
             
-            let category = sortedCategories[indexPath.row]
+            let numberFormatter = NumberFormatter()
+            numberFormatter.numberStyle = .decimal
+            numberFormatter.minimumFractionDigits = 2
+            numberFormatter.maximumFractionDigits = 2
+            numberFormatter.groupingSeparator = " "
+            numberFormatter.decimalSeparator = ","
             
-            if let expenses = expensesByCategory[category] {
-                let totalAmount = expenses.reduce(0) { $0 + $1.expense }
-                
-                let numberFormatter = NumberFormatter()
-                numberFormatter.numberStyle = .decimal
-                numberFormatter.minimumFractionDigits = 2
-                numberFormatter.maximumFractionDigits = 2
-                numberFormatter.groupingSeparator = " "
-                numberFormatter.decimalSeparator = ","
-                
-                if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-                    cell.labelMoneyCash.text = formattedAmount + " " + currency
-                }
-                
-                cell.categoryMoney.text = category
-                cell.expenceView.backgroundColor = colorCategory[indexPath.row % colorCategory.count]
-                
-                // Вычисляем процент от общей суммы и округляем в большую сторону
-                let percentage = (NSDecimalNumber(decimal: totalAmount).doubleValue / NSDecimalNumber(decimal: self.totalAmount).doubleValue) * 100
-                let roundedPercentage = Int(ceil(percentage))
-                cell.percentMoney.text = "\(roundedPercentage)%"
+            if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+                cell.labelMoneyCash.text = formattedAmount + " " + viewModel.currency.value
             }
             
-            return cell
-        } else {
-            print("Failed to dequeue a cell of type ExpenseCategoryCell")
-            return UITableViewCell()
+            cell.categoryMoney.text = category
+            cell.expenceView.backgroundColor = viewModel.colorCategory.value[indexPath.row % viewModel.colorCategory.value.count]
+            
+            let percentage = (NSDecimalNumber(decimal: totalAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue) * 100
+            let roundedPercentage = Int(ceil(percentage))
+            cell.percentMoney.text = "\(roundedPercentage)%"
         }
     }
     
@@ -643,25 +602,24 @@ extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
 }
 
 // MARK: - DateRangeCalendarViewDelegate
-
 extension AnalyticsViewController: DateRangeCalendarViewDelegate {
-    
     func didSelectDateRange(start: Date, end: Date) {
-        // Сохраняем временный диапазон дат
-        tempDateRange = (start, end)
+        viewModel.setTempDateRange((start, end))
     }
     
     func didConfirmDateRange() {
-        // Применяем фильтр только при нажатии ОК
-        if let dateRange = tempDateRange {
-            selectedDateRange = dateRange
-            // Сбрасываем выбранные кнопки периода
-            [dayButton, weekButton, monthButton, yearButton].forEach {
-                $0.isSelected = false
-                $0.backgroundColor = .etCardsToggled
-                $0.setTitleColor(.etCards, for: .normal)
-            }
+        if let dateRange = viewModel.getTempDateRange() {
+            viewModel.setSelectedDateRange(dateRange)
+            resetPeriodButtons()
             filterExpenses()
+        }
+    }
+    
+    private func resetPeriodButtons() {
+        [dayButton, weekButton, monthButton, yearButton].forEach {
+            $0.isSelected = false
+            $0.backgroundColor = .etCardsToggled
+            $0.setTitleColor(.etCards, for: .normal)
         }
     }
 }

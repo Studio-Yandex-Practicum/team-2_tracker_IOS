@@ -18,7 +18,8 @@ final class AnalyticsCoordinator: Coordinator {
     // MARK: - Coordinator Lifecycle
     
     func start() {
-        let analyticsViewController = AnalyticsViewController()
+        let viewModel = AnalyticsViewModel()
+        let analyticsViewController = AnalyticsViewController(viewModel: viewModel)
         analyticsViewController.coordinator = self
         navigationController.setViewControllers([analyticsViewController], animated: true)
     }
