@@ -30,7 +30,7 @@ struct DonutChartView: View {
         }
         .frame(width: size, height: size)
         .onAppear {
-            withAnimation(.easeInOut(duration: 1)) {
+            withAnimation(.easeInOut(duration: 2)) {
                 trimEnd = 1.0
             }
         }

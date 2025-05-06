@@ -19,7 +19,7 @@ final class AnalyticsCoordinator: Coordinator {
     
     func start() {
         let viewModel = AnalyticsViewModel()
-        let analyticsViewController = AnalyticsViewController(viewModel: viewModel)
+        let analyticsViewController = AnalyticsViewController(viewModel: viewModel, expensesViewmModel: ExpensesViewModel())
         analyticsViewController.coordinator = self
         navigationController.setViewControllers([analyticsViewController], animated: true)
     }

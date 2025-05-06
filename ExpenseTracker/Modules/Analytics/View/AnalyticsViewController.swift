@@ -7,6 +7,7 @@ final class AnalyticsViewController: UIViewController {
     
     weak var coordinator: AnalyticsCoordinator?
     private let viewModel: AnalyticsViewModel
+    private let expensesViewModel: ExpensesViewModel
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -120,8 +121,9 @@ final class AnalyticsViewController: UIViewController {
     }()
     
     // MARK: - Initialization
-    init(viewModel: AnalyticsViewModel) {
+    init(viewModel: AnalyticsViewModel, expensesViewmModel: ExpensesViewModel) {
         self.viewModel = viewModel
+        self.expensesViewModel = expensesViewmModel
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -141,6 +143,8 @@ final class AnalyticsViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .etBackground
         expenseCategoryTable.register(AnalyticsTableCell.self, forCellReuseIdentifier: "ExpenseCategoryCell")
+        expenseCategoryTable.delegate = self
+        expenseCategoryTable.dataSource = self
         addSubviews()
         setupLayout()
     }
@@ -161,10 +165,22 @@ final class AnalyticsViewController: UIViewController {
     }
     
     private func loadInitialData() {
-        let allExpenses = viewModel.getAllExpenses()
-        viewModel.updateExpensesData(with: allExpenses)
+        // Получаем данные из ExpensesViewController
+        let expensesByDate = expensesViewModel.getAllExpensesByDate()
+        viewModel.updateExpensesByDate(expensesByDate)
+        
+        // Обновляем UI
         updateDonutChart()
+        updateMoneyLabel(with: viewModel.totalAmount.value)
+        updateDateLabel()
         expenseCategoryTable.reloadData()
+        
+        // Показываем таблицу или пустое состояние
+        if viewModel.getExpensesByCategory().isEmpty {
+            showEmptyState()
+        } else {
+            showTableState()
+        }
     }
     
     // MARK: - UI Updates
@@ -236,6 +252,13 @@ final class AnalyticsViewController: UIViewController {
     }
     
     private func updateDonutChart() {
+        if viewModel.getExpensesByCategory().isEmpty {
+            // Если нет данных, показываем неактивную диаграмму
+            let data: [(value: Double, color: UIColor)] = [(1, .etInactive)]
+            donutChartView.configure(with: data, size: 130, lineWidth: 16, overlapAngle: 0)
+            return
+        }
+        
         var chartData: [(value: Double, color: UIColor)] = []
         
         // Добавляем первую категорию в начало
@@ -243,7 +266,7 @@ final class AnalyticsViewController: UIViewController {
            let expenses = viewModel.getExpensesByCategory()[firstCategory] {
             let categoryAmount = expenses.reduce(0) { $0 + $1.expense }
             let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue
-            chartData.append((value: percentage, color: viewModel.colorCategory.value[0]))
+            chartData.append((value: percentage / 2, color: viewModel.colorCategory.value[0]))
         }
         
         // Добавляем остальные категории
@@ -255,7 +278,7 @@ final class AnalyticsViewController: UIViewController {
             }
         }
         
-        // Добавляем первую категорию в конец
+        // Добавляем первую категорию в конец (половина значения)
         if let firstCategory = viewModel.getSortedCategories().first,
            let expenses = viewModel.getExpensesByCategory()[firstCategory] {
             let categoryAmount = expenses.reduce(0) { $0 + $1.expense }
@@ -308,6 +331,7 @@ final class AnalyticsViewController: UIViewController {
         let filteredExpenses = getFilteredExpenses()
         viewModel.updateExpensesData(with: filteredExpenses)
         updateUI(with: filteredExpenses)
+        reloadTable()
     }
     
     private func getFilteredExpenses() -> [Expense] {
@@ -387,9 +411,6 @@ final class AnalyticsViewController: UIViewController {
     }
     
     func addSubviews() {
-        expenseCategoryTable.delegate = self
-        expenseCategoryTable.dataSource = self
-        
         view.addSubview(dateLabel)
         view.addSubview(labelMoney)
         view.addSubview(donutChartView)
@@ -490,56 +511,18 @@ final class AnalyticsViewController: UIViewController {
         ])
     }
     
-    // MARK: - Actions
-    @objc private func sortButtonTapped() {
-        viewModel.toggleSortOrder()
-        updateSortButtonImage()
+    // MARK: - Helper Methods
+    private func reloadTable() {
         expenseCategoryTable.reloadData()
+        updateDonutChart()
     }
     
-    private func updateSortButtonImage() {
-        let imageName = viewModel.getIsAscending() ? Asset.Icon.arrowSortUp.rawValue : Asset.Icon.arrowSortDown.rawValue
-        sortedCategoryButton.setImage(UIImage(named: imageName)?.withTintColor(.etPrimaryLabel), for: .normal)
-    }
-    
-    @objc private func dayButtonTapped() {
-        viewModel.setSelectedDateRange(nil)
-        setupFilterButtonState(for: dayButton, with: .day)
-    }
-    
-    @objc private func weekButtonTapped() {
-        viewModel.setSelectedDateRange(nil)
-        setupFilterButtonState(for: weekButton, with: .week)
-    }
-    
-    @objc private func monthButtonTapped() {
-        viewModel.setSelectedDateRange(nil)
-        setupFilterButtonState(for: monthButton, with: .month)
-    }
-    
-    @objc private func yearButtonTapped() {
-        viewModel.setSelectedDateRange(nil)
-        setupFilterButtonState(for: yearButton, with: .year)
-    }
-    
-    @objc private func calendarButtonTapped() {
-        DateRangeCalendarView.show(in: self, delegate: self)
-    }
-}
-
-// MARK: - TableView
-extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return viewModel.getSortedCategories().count
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = expenseCategoryTable.dequeueReusableCell(withIdentifier: "ExpenseCategoryCell", for: indexPath) as? AnalyticsTableCell else {
-            return UITableViewCell()
+    private func resetPeriodButtons() {
+        [dayButton, weekButton, monthButton, yearButton].forEach {
+            $0.isSelected = false
+            $0.backgroundColor = .etCardsToggled
+            $0.setTitleColor(.etCards, for: .normal)
         }
-        
-        configureCell(cell, at: indexPath)
-        return cell
     }
     
     private func configureCell(_ cell: AnalyticsTableCell, at indexPath: IndexPath) {
@@ -574,11 +557,63 @@ extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
         }
     }
     
+    // MARK: - Actions
+    @objc private func sortButtonTapped() {
+        viewModel.toggleSortOrder()
+        updateSortButtonImage()
+        reloadTable()
+    }
+    
+    private func updateSortButtonImage() {
+        let imageName = viewModel.getIsAscending() ? Asset.Icon.arrowSortUp.rawValue : Asset.Icon.arrowSortDown.rawValue
+        sortedCategoryButton.setImage(UIImage(named: imageName)?.withTintColor(.etPrimaryLabel), for: .normal)
+    }
+    
+    @objc private func dayButtonTapped() {
+        viewModel.setSelectedDateRange(nil)
+        setupFilterButtonState(for: dayButton, with: .day)
+    }
+    
+    @objc private func weekButtonTapped() {
+        viewModel.setSelectedDateRange(nil)
+        setupFilterButtonState(for: weekButton, with: .week)
+    }
+    
+    @objc private func monthButtonTapped() {
+        viewModel.setSelectedDateRange(nil)
+        setupFilterButtonState(for: monthButton, with: .month)
+    }
+    
+    @objc private func yearButtonTapped() {
+        viewModel.setSelectedDateRange(nil)
+        setupFilterButtonState(for: yearButton, with: .year)
+    }
+    
+    @objc private func calendarButtonTapped() {
+        DateRangeCalendarView.show(in: self, delegate: self)
+    }
+}
+
+// MARK: - UITableViewDelegate, UITableViewDataSource
+
+extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return viewModel.getSortedCategories().count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = expenseCategoryTable.dequeueReusableCell(withIdentifier: "ExpenseCategoryCell", for: indexPath) as? AnalyticsTableCell else {
+            return UITableViewCell()
+        }
+        
+        configureCell(cell, at: indexPath)
+        return cell
+    }
+    
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 60
     }
     
-    // Закругление углов секции таблицы
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
         let cornerRadius = 12
         var corners: UIRectCorner = []
@@ -602,6 +637,7 @@ extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
 }
 
 // MARK: - DateRangeCalendarViewDelegate
+
 extension AnalyticsViewController: DateRangeCalendarViewDelegate {
     func didSelectDateRange(start: Date, end: Date) {
         viewModel.setTempDateRange((start, end))
@@ -612,14 +648,7 @@ extension AnalyticsViewController: DateRangeCalendarViewDelegate {
             viewModel.setSelectedDateRange(dateRange)
             resetPeriodButtons()
             filterExpenses()
-        }
-    }
-    
-    private func resetPeriodButtons() {
-        [dayButton, weekButton, monthButton, yearButton].forEach {
-            $0.isSelected = false
-            $0.backgroundColor = .etCardsToggled
-            $0.setTitleColor(.etCards, for: .normal)
+            reloadTable()
         }
     }
 }

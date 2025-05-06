@@ -4,7 +4,7 @@ import UIKit
 final class AnalyticsViewModel {
     // MARK: - Observable Properties
     
-    let totalAmount = Observable<Decimal>(12345)
+    let totalAmount = Observable<Decimal>(0)
     let currency = Observable<String>(Currency.ruble.rawValue)
     let dayToday = Observable<Date>(Date(timeIntervalSinceNow: 0))
     let colorCategory = Observable<[UIColor]>(
@@ -33,19 +33,25 @@ final class AnalyticsViewModel {
     // MARK: - Methods
     
     func getAllExpenses() -> [Expense] {
-        // Здесь должна быть логика получения всех расходов
-        return []
+        return expensesByDate.values.flatMap { $0 }
     }
     
     func getExpensesForPeriod(startDate: Date, endDate: Date) -> [Date: [Expense]] {
-        // Здесь должна быть логика получения расходов за период
-        return [:]
+        return expensesByDate.filter { date, expenses in
+            date >= startDate && date <= endDate
+        }
     }
     
     func updateExpensesData(with expenses: [Expense]) {
         expensesByCategory = Dictionary(grouping: expenses) { $0.category }
         sortCategories()
         totalAmount.value = expenses.reduce(0) { $0 + $1.expense }
+    }
+    
+    func updateExpensesByDate(_ expenses: [Date: [Expense]]) {
+        expensesByDate = expenses
+        let allExpenses = expenses.values.flatMap { $0 }
+        updateExpensesData(with: allExpenses)
     }
     
     func sortCategories() {
