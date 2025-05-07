@@ -136,6 +136,13 @@ final class ExpensesViewController: UIViewController {
         addSubviews()
         setupLayout()
         loadExpenses(for: dayToday, periodType: nil)
+        
+        // Проверяем наличие расходов и показываем соответствующее состояние
+        if expensesByDate.isEmpty {
+            showEmptyState()
+        } else {
+            showTableState()
+        }
     }
     
     private func setupFilterButtonState(for button: UIButton, with period: PeriodType) {
@@ -240,7 +247,12 @@ final class ExpensesViewController: UIViewController {
         numberFormatter.decimalSeparator = ","
         
         if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-            labelMoney.text = formattedAmount + " " + currency
+            // Если сумма равна 0, показываем только "0"
+            if totalAmount == 0 {
+                labelMoney.text = "0 " + currency
+            } else {
+                labelMoney.text = formattedAmount + " " + currency
+            }
         }
         
         // Обновляем отображение даты
@@ -255,7 +267,61 @@ final class ExpensesViewController: UIViewController {
             dateLabel.text = "Расходы"
         }
         
+        // Показываем таблицу или пустое состояние
+        if filteredExpenses.isEmpty {
+            showEmptyState()
+        } else {
+            showTableState()
+        }
+    }
+    
+    private func showEmptyState() {
+        if expenseMoneyTable.superview != nil {
+            expenseMoneyTable.removeFromSuperview()
+        }
+        if noExpensesLabel.superview == nil {
+            view.addSubview(noExpensesLabel)
+            view.addSubview(addExpensesLabel)
+            setupEmptyStateConstraints()
+        }
+    }
+    
+    private func showTableState() {
+        if noExpensesLabel.superview != nil {
+            noExpensesLabel.removeFromSuperview()
+            addExpensesLabel.removeFromSuperview()
+        }
+        if expenseMoneyTable.superview == nil {
+            view.addSubview(expenseMoneyTable)
+            setupTableConstraints()
+        }
         expenseMoneyTable.reloadData()
+    }
+    
+    private func setupEmptyStateConstraints() {
+        noExpensesLabel.translatesAutoresizingMaskIntoConstraints = false
+        addExpensesLabel.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            noExpensesLabel.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 96),
+            noExpensesLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
+            noExpensesLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
+            
+            addExpensesLabel.topAnchor.constraint(equalTo: noExpensesLabel.bottomAnchor, constant: 8),
+            addExpensesLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
+            addExpensesLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)
+        ])
+    }
+    
+    private func setupTableConstraints() {
+        expenseMoneyTable.translatesAutoresizingMaskIntoConstraints = false
+        
+        NSLayoutConstraint.activate([
+            expenseMoneyTable.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 12),
+            expenseMoneyTable.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
+            expenseMoneyTable.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
+            expenseMoneyTable.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        ])
     }
     
     private func getSelectedPeriodType() -> PeriodType? {
@@ -287,7 +353,6 @@ final class ExpensesViewController: UIViewController {
         navigationController?.setNavigationBarHidden(true, animated: false)
         
         var constraints = [
-            
             addCategoryButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             addCategoryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
@@ -311,28 +376,6 @@ final class ExpensesViewController: UIViewController {
             categoryButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 6)
         ]
         
-        if totalAmount == 0 {
-            view.addSubview(noExpensesLabel)
-            view.addSubview(addExpensesLabel)
-            
-            constraints += [
-                noExpensesLabel.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 96),
-                noExpensesLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-                noExpensesLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24),
-                
-                addExpensesLabel.topAnchor.constraint(equalTo: noExpensesLabel.bottomAnchor, constant: 8),
-                addExpensesLabel.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 24),
-                addExpensesLabel.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -24)
-            ]
-        } else {
-            view.addSubview(expenseMoneyTable)
-            constraints += [
-                expenseMoneyTable.topAnchor.constraint(equalTo: categoryButton.bottomAnchor, constant: 12),
-                expenseMoneyTable.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 16),
-                expenseMoneyTable.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -16),
-                expenseMoneyTable.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-            ]
-        }
         NSLayoutConstraint.activate(constraints)
     }
     
@@ -353,7 +396,12 @@ final class ExpensesViewController: UIViewController {
             numberFormatter.decimalSeparator = ","
             
             if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-                labelMoney.text = formattedAmount + " " + currency
+                // Если сумма равна 0, показываем только "0"
+                if totalAmount == 0 {
+                    labelMoney.text = "0 " + currency
+                } else {
+                    labelMoney.text = formattedAmount + " " + currency
+                }
             }
             
             let textForCurrentDate = dateFormatter.string(from: startDate)
@@ -375,7 +423,12 @@ final class ExpensesViewController: UIViewController {
             numberFormatter.decimalSeparator = ","
             
             if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
-                labelMoney.text = formattedAmount + " " + currency
+                // Если сумма равна 0, показываем только "0"
+                if totalAmount == 0 {
+                    labelMoney.text = "0 " + currency
+                } else {
+                    labelMoney.text = formattedAmount + " " + currency
+                }
             }
             
             dateLabel.text = "Расходы"
@@ -561,7 +614,8 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
         }
     }
     
-    @objc private func calendarButtonTapped() {
+    @objc
+    private func calendarButtonTapped() {
         DateRangeCalendarView.show(in: self, delegate: self)
     }
 }
