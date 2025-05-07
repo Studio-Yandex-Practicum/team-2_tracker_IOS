@@ -37,7 +37,7 @@ final class DateRangeCalendarView: UIView {
         let label = UILabel()
         label.text = "Выберите диапазон дат"
         label.font = .systemFont(ofSize: 14, weight: .medium)
-        label.textColor = .label
+        label.textColor = .etCards
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -73,7 +73,7 @@ final class DateRangeCalendarView: UIView {
         picker.delegate = self
         picker.dataSource = self
         picker.isHidden = true
-        picker.backgroundColor = .systemBackground
+        picker.backgroundColor = .etCardsToggled
         return picker
     }()
     
@@ -184,7 +184,7 @@ final class DateRangeCalendarView: UIView {
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 12)
         label.textColor = .etCards
-        label.backgroundColor = .systemBackground
+        label.backgroundColor = .etCardsToggled
         label.translatesAutoresizingMaskIntoConstraints = false
         label.widthAnchor.constraint(equalToConstant: 104).isActive = true
         return label
@@ -196,7 +196,7 @@ final class DateRangeCalendarView: UIView {
         label.textAlignment = .center
         label.font = .systemFont(ofSize: 12)
         label.textColor = .etCards
-        label.backgroundColor = .systemBackground
+        label.backgroundColor = .etCardsToggled
         label.translatesAutoresizingMaskIntoConstraints = false
         label.widthAnchor.constraint(equalToConstant: 98).isActive = true
         return label
@@ -284,8 +284,6 @@ final class DateRangeCalendarView: UIView {
     // MARK: - Setup
     
     private func setupUI() {
-        backgroundColor = .systemBackground
-        
         addSubview(titleLabel)
         addSubview(dateRangeStackView)
         addSubview(separatorView)
@@ -384,7 +382,7 @@ final class DateRangeCalendarView: UIView {
             let currentYear = calendar.component(.year, from: currentMonth)
             let currentMonth = calendar.component(.month, from: currentMonth)
             monthPickerView.selectRow(currentMonth - 1, inComponent: 0, animated: false)
-            monthPickerView.selectRow(currentYear - 2020, inComponent: 1, animated: false)
+            monthPickerView.selectRow(currentYear - 2000, inComponent: 1, animated: false)
         }
     }
     
@@ -534,7 +532,7 @@ final class DateRangeCalendarView: UIView {
         let calendarView = DateRangeCalendarView()
         calendarView.delegate = delegate
         calendarView.translatesAutoresizingMaskIntoConstraints = false
-        calendarView.backgroundColor = .systemBackground
+        calendarView.backgroundColor = .etCardsToggled
         calendarView.layer.cornerRadius = 28
         
         viewController.view.addSubview(containerView)
@@ -669,23 +667,23 @@ extension DateRangeCalendarView: UIPickerViewDelegate, UIPickerViewDataSource {
             return 12 // месяцы
         } else {
             let currentYear = calendar.component(.year, from: Date())
-            return currentYear - 2019 // от 2020 до текущего года
+            return currentYear - 1999 // от 2000 до текущего года
         }
     }
     
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
         if component == 0 {
             let month = row + 1
-            let date = calendar.date(from: DateComponents(year: 2020, month: month))!
+            let date = calendar.date(from: DateComponents(year: 2000, month: month))!
             return dateFormatter.string(from: date).components(separatedBy: " ").first
         } else {
-            return "\(2020 + row)"
+            return "\(2000 + row)"
         }
     }
     
     func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
         let selectedMonth = monthPickerView.selectedRow(inComponent: 0) + 1
-        let selectedYear = monthPickerView.selectedRow(inComponent: 1) + 2020
+        let selectedYear = monthPickerView.selectedRow(inComponent: 1) + 2000
         let currentYear = calendar.component(.year, from: Date())
         let currentMonth = calendar.component(.month, from: Date())
         
@@ -693,7 +691,7 @@ extension DateRangeCalendarView: UIPickerViewDelegate, UIPickerViewDataSource {
         if selectedYear > currentYear || (selectedYear == currentYear && selectedMonth > currentMonth) {
             // Если выбрана дата в будущем, возвращаем к текущей дате
             monthPickerView.selectRow(currentMonth - 1, inComponent: 0, animated: true)
-            monthPickerView.selectRow(currentYear - 2020, inComponent: 1, animated: true)
+            monthPickerView.selectRow(currentYear - 2000, inComponent: 1, animated: true)
             return
         }
         
