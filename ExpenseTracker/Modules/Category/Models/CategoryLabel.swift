@@ -3,7 +3,7 @@ import Foundation
 enum CategoryLabel: String {
     
     // Создание категории
-    case createCategory = "Создать категорию"
+    case createCategory = "Новая категория"
     case chooseIcon = "Выбор иконки"
     case categoryName = "Название категории"
     
