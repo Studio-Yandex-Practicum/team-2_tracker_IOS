@@ -49,7 +49,7 @@ final class CategorySelectionCell: UITableViewCell {
 
     // MARK: - Properties
 
-    private var isCellSelected: Bool = false {
+    var isCellSelected: Bool = false {
         didSet {
             updateCheckmarkVisibility()
         }

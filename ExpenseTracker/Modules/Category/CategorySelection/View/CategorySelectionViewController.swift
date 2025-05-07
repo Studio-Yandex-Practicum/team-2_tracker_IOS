@@ -12,8 +12,6 @@ final class CategorySelectionViewController: UIViewController {
     weak var delegate: CategorySelectionDelegate?
     private var isSelectionFlow: Bool
     private var customNavigationBar: CustomBackBarItem?
-    private var isAllCategoriesSelected: Bool = false
-    private var selectedIndexPath: IndexPath?
     private let categories: [CategoryMain] = CategoryProvider.baseCategories
     private var filteredCategories: [CategoryMain] = []
     private var selectedCategories: Set<String> = []
@@ -45,6 +43,15 @@ final class CategorySelectionViewController: UIViewController {
         tableView.allowsMultipleSelection = !isSelectionFlow
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
+    }()
+    
+    private let checkmarkImageView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        imageView.image = UIImage(named: Asset.Icon.checkboxPressed.rawValue)
+        imageView.isHidden = true
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        return imageView
     }()
     
     private let setButton: MainButton = {
@@ -113,6 +120,8 @@ final class CategorySelectionViewController: UIViewController {
             view.addSubview($0)
         }
         
+        categoryTableViewButton.addSubview(checkmarkImageView)
+        
         NSLayoutConstraint.activate([
             setButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -12),
             setButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
@@ -126,7 +135,12 @@ final class CategorySelectionViewController: UIViewController {
             categoryTableViewButton.topAnchor.constraint(equalTo: categorySearchBar.bottomAnchor, constant: 16),
             categoryTableViewButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             categoryTableViewButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            categoryTableViewButton.heightAnchor.constraint(equalToConstant: 48)
+            categoryTableViewButton.heightAnchor.constraint(equalToConstant: 48),
+            
+            checkmarkImageView.trailingAnchor.constraint(equalTo: categoryTableViewButton.trailingAnchor, constant: -16),
+            checkmarkImageView.centerYAnchor.constraint(equalTo: categoryTableViewButton.centerYAnchor),
+            checkmarkImageView.widthAnchor.constraint(equalToConstant: 24),
+            checkmarkImageView.heightAnchor.constraint(equalToConstant: 24)
         ])
     }
     
@@ -135,7 +149,7 @@ final class CategorySelectionViewController: UIViewController {
             categoryTableViewButton.addTargetToIcon(self, action: #selector(showNewCategoryFlow), for: .touchUpInside)
             categoryTableViewButton.addTarget(self, action: #selector(showNewCategoryFlow), for: .touchUpInside)
         } else {
-            categoryTableViewButton.addTarget(self, action: #selector(selectAllCategories), for: .touchUpInside)
+            categoryTableViewButton.addTarget(self, action: #selector(allCategoriesButtonTapped), for: .touchUpInside)
         }
     }
     
@@ -147,7 +161,6 @@ final class CategorySelectionViewController: UIViewController {
     private func reloadCells() {
         for case let cell as CategorySelectionCell in categoryTableViewController.visibleCells {
             guard let indexPath = categoryTableViewController.indexPath(for: cell) else { continue }
-            
             let isFirst = indexPath.row == 0
             let isLast = indexPath.row == filteredCategories.count - 1
             cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
@@ -163,9 +176,24 @@ final class CategorySelectionViewController: UIViewController {
     }
     
     private func updateSetButtonState() {
-        let hasSelectedCategories = !selectedCategories.isEmpty
-        setButton.isEnabled = hasSelectedCategories
-        setButton.backgroundColor = hasSelectedCategories ? .etAccent : .etInactive
+        setButton.isEnabled = !selectedCategories.isEmpty
+        setButton.backgroundColor = !selectedCategories.isEmpty ? .etAccent : .etInactive
+    }
+    
+    private func setupCheckBox() {
+        checkmarkImageView.isHidden.toggle()
+        if !checkmarkImageView.isHidden {
+            selectedCategories = Set(categories.map(\.title))
+        } else {
+            selectedCategories = []
+        }
+    }
+    
+    private func deselectAllCells() {
+        for indexPath in categoryTableViewController.indexPathsForSelectedRows ?? [] {
+            categoryTableViewController.deselectRow(at: indexPath, animated: true)
+        }
+        reloadCells()
     }
     
     @objc
@@ -185,23 +213,9 @@ final class CategorySelectionViewController: UIViewController {
     }
     
     @objc
-    private func selectAllCategories() {
-        isAllCategoriesSelected.toggle()
-        
-        for row in categories.indices {
-            let indexPath = IndexPath(row: row, section: 0)
-            let category = categories[row]
-            
-            if isAllCategoriesSelected {
-                categoryTableViewController.selectRow(at: indexPath, animated: false, scrollPosition: .none)
-                selectedCategories.insert(category.title)
-                updateCellSelection(at: indexPath, isSelected: true)
-            } else {
-                categoryTableViewController.deselectRow(at: indexPath, animated: false)
-                selectedCategories.remove(category.title)
-                updateCellSelection(at: indexPath, isSelected: false)
-            }
-        }
+    private func allCategoriesButtonTapped() {
+        setupCheckBox()
+        deselectAllCells()
         updateSetButtonState()
     }
 }
@@ -272,32 +286,32 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let category = filteredCategories[indexPath.row]
-        selectedCategories.insert(category.title)
-        updateCellSelection(at: indexPath, isSelected: true)
-        
-        if isSelectionFlow {
-            if let previousIndexPath = selectedIndexPath, previousIndexPath != indexPath {
-                updateCellSelection(at: previousIndexPath, isSelected: false)
-            }
-            selectedIndexPath = indexPath
+        guard let cell = tableView.cellForRow(at: indexPath) as? CategorySelectionCell else {
+            return
         }
+        if !checkmarkImageView.isHidden {
+            selectedCategories = []
+        }
+        checkmarkImageView.isHidden = true
+        
+        let selectedCategory = categories[indexPath.row]
+        selectedCategories.insert(selectedCategory.title)
+        cell.isCellSelected.toggle()
         updateSetButtonState()
     }
-
+    
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        if !isSelectionFlow {
-            let category = filteredCategories[indexPath.row]
-            selectedCategories.remove(category.title)
-            updateCellSelection(at: indexPath, isSelected: false)
+        guard let cell = tableView.cellForRow(at: indexPath) as? CategorySelectionCell else {
+            return
+        }
+        let selectedCategory = categories[indexPath.row]
+        
+        if isSelectionFlow {
+            cell.isCellSelected = false
+        } else {
+            selectedCategories.remove(selectedCategory.title)
+            cell.isCellSelected.toggle()
             updateSetButtonState()
         }
-    }
-
-    private func updateCellSelection(at indexPath: IndexPath, isSelected: Bool) {
-        guard let cell = categoryTableViewController.cellForRow(at: indexPath) as? CategorySelectionCell else { return }
-        let isFirst = indexPath.row == 0
-        let isLast = indexPath.row == filteredCategories.count - 1
-        cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
     }
 }
