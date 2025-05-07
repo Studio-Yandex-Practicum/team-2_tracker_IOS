@@ -230,7 +230,15 @@ extension CategorySelectionViewController: UISearchBarDelegate {
         } else {
             filteredCategories = categories.filter { $0.title.lowercased().contains(searchText.lowercased()) }
         }
-        categoryTableViewButton.isHidden = filteredCategories.isEmpty
+        
+        if filteredCategories.isEmpty {
+            categoryTableViewButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            categoryTableViewButton.hideSeparator()
+        } else {
+            categoryTableViewButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+            categoryTableViewButton.showSeparator()
+        }
+        
         categoryTableViewController.reloadData()
     }
     

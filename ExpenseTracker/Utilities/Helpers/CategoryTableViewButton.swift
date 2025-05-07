@@ -60,6 +60,14 @@ final class CategoryTableViewButton: UIButton {
         iconButton.addTarget(target, action: action, for: controlEvents)
     }
     
+    func hideSeparator() {
+        separator.isHidden = true
+    }
+    
+    func showSeparator() {
+        separator.isHidden = false
+    }
+    
     // MARK: - Layout
     
     private func setupUI() {
