@@ -75,6 +75,14 @@ final class RegistrationViewController: UIViewController {
         return button
     }()
     
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.color = .etButtonLabel
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+    
     init(viewModel: RegistrationViewModel) {
         self.registrationViewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -94,6 +102,13 @@ final class RegistrationViewController: UIViewController {
         registrationViewModel.isLoading.bind { [weak self] isLoading in
             guard let self else { return }
             self.registrationButton.isEnabled = !isLoading
+            if isLoading {
+                self.registrationButton.setTitle("", for: .normal)
+                self.activityIndicator.startAnimating()
+            } else {
+                self.registrationButton.setTitle(ButtonAction.register.rawValue, for: .normal)
+                self.activityIndicator.stopAnimating()
+            }
         }
         
         registrationViewModel.isLoggedIn.bind { [weak self] isLoggedIn in
@@ -173,6 +188,12 @@ final class RegistrationViewController: UIViewController {
             view.addSubview($0)
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
+        
+        registrationButton.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: registrationButton.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: registrationButton.centerYAnchor)
+        ])
     }
     
     private func setupRegistrationStackView() {

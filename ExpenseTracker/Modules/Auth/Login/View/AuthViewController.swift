@@ -44,6 +44,14 @@ final class AuthViewController: UIViewController {
         return button
     }()
     
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.color = .etButtonLabel
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+    
     private let footerStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
@@ -88,6 +96,13 @@ final class AuthViewController: UIViewController {
         authViewModel.isLoading.bind { [weak self] isLoading in
             guard let self else { return }
             self.loginButton.isEnabled = !isLoading
+            if isLoading {
+                self.loginButton.setTitle("", for: .normal)
+                self.activityIndicator.startAnimating()
+            } else {
+                self.loginButton.setTitle(ButtonAction.login.rawValue, for: .normal)
+                self.activityIndicator.stopAnimating()
+            }
         }
         
         authViewModel.isLoginButtonEnabled.bind { [weak self] isButtonEnabled in
@@ -134,6 +149,12 @@ final class AuthViewController: UIViewController {
             view.addSubview($0)
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
+        
+        loginButton.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: loginButton.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: loginButton.centerYAnchor)
+        ])
     }
     
     private func setupAuthStackView() {

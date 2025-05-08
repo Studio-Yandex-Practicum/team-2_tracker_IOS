@@ -18,6 +18,14 @@ final class PasswordRecoveryViewController: UIViewController {
         return button
     }()
     
+    private let activityIndicator: UIActivityIndicatorView = {
+        let indicator = UIActivityIndicatorView(style: .medium)
+        indicator.color = .etButtonLabel
+        indicator.hidesWhenStopped = true
+        indicator.translatesAutoresizingMaskIntoConstraints = false
+        return indicator
+    }()
+    
     init(viewModel: PasswordRecoveryViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -51,6 +59,18 @@ final class PasswordRecoveryViewController: UIViewController {
             }
         }
         
+        viewModel.isLoading.bind { [weak self] isLoading in
+            guard let self else { return }
+            self.sendButton.isEnabled = !isLoading
+            if isLoading {
+                self.sendButton.setTitle("", for: .normal)
+                self.activityIndicator.startAnimating()
+            } else {
+                self.sendButton.setTitle(ButtonAction.send.rawValue, for: .normal)
+                self.activityIndicator.stopAnimating()
+            }
+        }
+        
         viewModel.isLoginButtonEnabled.bind { [weak self] isButtonEnabled in
             guard let self else { return }
             sendButton.isEnabled = isButtonEnabled
@@ -77,6 +97,12 @@ final class PasswordRecoveryViewController: UIViewController {
             view.addSubview($0)
             $0.translatesAutoresizingMaskIntoConstraints = false
         }
+        
+        sendButton.addSubview(activityIndicator)
+        NSLayoutConstraint.activate([
+            activityIndicator.centerXAnchor.constraint(equalTo: sendButton.centerXAnchor),
+            activityIndicator.centerYAnchor.constraint(equalTo: sendButton.centerYAnchor)
+        ])
     }
     
     private func setupEmailTextField() {
