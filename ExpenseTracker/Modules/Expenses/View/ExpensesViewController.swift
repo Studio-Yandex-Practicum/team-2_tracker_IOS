@@ -228,7 +228,7 @@ final class ExpensesViewController: UIViewController {
         // Фильтрация по категориям
         if let selectedCategories = selectedCategories, !selectedCategories.isEmpty {
             filteredExpenses = filteredExpenses.filter { expense in
-                selectedCategories.contains(expense.category.description)
+                selectedCategories.contains(expense.category.name)
             }
         }
         

@@ -154,7 +154,8 @@ final class ExpensesTableCell: UITableViewCell {
     // MARK: - Configuration
     
     func configure(with expense: Expense) {
-        categoryMoney.text = expense.category
+        expenceImage.image = UIImage(named: expense.category.icon.rawValue)?.withTintColor(.etButtonLabel)
+        categoryMoney.text = expense.category.name
         noteMoney.text = expense.note
         
         let numberFormatter = NumberFormatter()
