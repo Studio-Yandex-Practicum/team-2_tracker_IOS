@@ -103,7 +103,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     private lazy var placeholderLabel: UILabel = {
         let placeholderLabel = UILabel()
         // Настройка UILabel для плейсхолдера
-        placeholderLabel.text = "Примечание"
+        placeholderLabel.text = "Добавьте детали о расходе (необязательно)"
         placeholderLabel.font = AppTextStyle.body.font
         placeholderLabel.textColor = .etSecondaryLabel
         placeholderLabel.frame.origin = CGPoint(x: 16, y: 12) // Положение плейсхолдера
