@@ -173,6 +173,8 @@ final class AuthViewController: UIViewController {
         loginTextField.textField.addTarget(self, action: #selector(loginTextFieldIsEditing), for: .editingChanged)
         loginButton.addTarget(self, action: #selector(signIn), for: .touchUpInside)
         
+        passwordTextField.addTarget(self, action: #selector(passwordFieldIsEditing), for: .editingChanged)
+        
         forgotPasswordButton.addTarget(self, action: #selector(showPasswordRecover), for: .touchUpInside)
         footerButton.addTarget(self, action: #selector(showRegistrationView), for: .touchUpInside)
     }
@@ -186,6 +188,12 @@ final class AuthViewController: UIViewController {
     private func loginTextFieldIsEditing() {
         guard let email = loginTextField.textField.text else { return }
         authViewModel.updateEmail(email)
+    }
+    
+    @objc
+    private func passwordFieldIsEditing() {
+        guard let password = passwordTextField.text else { return }
+        authViewModel.updatePassword(password.isEmpty)
     }
     
     @objc

@@ -6,6 +6,7 @@ final class AuthViewModel {
     // MARK: - Properties
     
     private(set) var email: String = ""
+    private(set) var isPasswordEmpty: Bool = true
     
     var isLoading: Observable<Bool> = Observable(false)
     var isLoggedIn: Observable<Bool> = Observable(false)
@@ -32,12 +33,17 @@ final class AuthViewModel {
     
     func updateEmail(_ email: String) {
         self.email = email
-        validateEmail()
+        validateFields()
     }
     
-    func validateEmail() {
+    func updatePassword(_ isEmpty: Bool) {
+        self.isPasswordEmpty = isEmpty
+        validateFields()
+    }
+    
+    func validateFields() {
         let isEmailValid = AuthValidator.isValidEmail(email)
         emailError.value = isEmailValid ? nil : .invalidEmail
-        isLoginButtonEnabled.value = isEmailValid
+        isLoginButtonEnabled.value = isEmailValid && !isPasswordEmpty
     }
 }
