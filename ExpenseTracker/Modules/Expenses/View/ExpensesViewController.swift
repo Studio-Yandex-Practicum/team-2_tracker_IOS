@@ -49,6 +49,7 @@ final class ExpensesViewController: UIViewController {
         tableView.sectionHeaderTopPadding = 0
         tableView.showsVerticalScrollIndicator = false
         tableView.separatorInset = .zero
+        tableView.separatorStyle = .none
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
@@ -486,8 +487,16 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         
         let dateKeys = Array(expensesByDate.keys)
         let dateKey = dateKeys.sorted(by: >)
+        
         if let expense = expensesByDate[dateKey[indexPath.section]]?[indexPath.row] {
             cell.configure(with: expense)
+            
+            // Скрываем сепаратор для последней ячейки в секции
+            if indexPath.row == tableView.numberOfRows(inSection: indexPath.section) - 1 {
+                cell.hideSeparator()
+            } else {
+                cell.showSeparator()
+            }
         }
         
         return cell

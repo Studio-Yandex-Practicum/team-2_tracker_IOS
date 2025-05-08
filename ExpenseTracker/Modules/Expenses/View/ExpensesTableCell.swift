@@ -74,6 +74,13 @@ final class ExpensesTableCell: UITableViewCell {
         return label
     }()
     
+    private let customSeparator: UIView = {
+        let view = UIView()
+        view.backgroundColor = .etSeparators
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
     // MARK: - Initialization
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -98,6 +105,7 @@ final class ExpensesTableCell: UITableViewCell {
         backView.addSubview(expenceView)
         backView.addSubview(labelsStack)
         backView.addSubview(labelMoneyCash)
+        backView.addSubview(customSeparator)
         
         // Настраиваем иконку
         expenceView.addSubview(expenceImage)
@@ -134,7 +142,12 @@ final class ExpensesTableCell: UITableViewCell {
             
             // LabelMoneyCash constraints
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
-            labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16)
+            labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16),
+            
+            customSeparator.leadingAnchor.constraint(equalTo: backView.leadingAnchor),
+            customSeparator.trailingAnchor.constraint(equalTo: backView.trailingAnchor),
+            customSeparator.bottomAnchor.constraint(equalTo: backView.bottomAnchor),
+            customSeparator.heightAnchor.constraint(equalToConstant: 1)
         ])
     }
     
@@ -161,10 +174,19 @@ final class ExpensesTableCell: UITableViewCell {
         }
     }
     
+    func hideSeparator() {
+        customSeparator.isHidden = true
+    }
+    
+    func showSeparator() {
+        customSeparator.isHidden = false
+    }
+    
     override func prepareForReuse() {
         super.prepareForReuse()
         categoryMoney.text = nil
         noteMoney.text = nil
         labelMoneyCash.text = nil
+        customSeparator.isHidden = false
     }
 }
