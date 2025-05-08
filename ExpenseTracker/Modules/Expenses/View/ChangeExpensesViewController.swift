@@ -82,7 +82,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     }()
     
     private lazy var addMoney: MoneyTextField = {
-        let addMoney = MoneyTextField(placeholder: "Введите сумму")
+        let addMoney = MoneyTextField(placeholder: "Сумма расхода")
         addMoney.setupToggleButton(Asset.Icon.currencyRuble.rawValue)
         addMoney.textColor = .etCards
         addMoney.keyboardType = .decimalPad
