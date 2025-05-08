@@ -10,13 +10,11 @@ final class AnalyticsViewModel {
     let colorCategory = Observable<[UIColor]>(
         [
             UIColor.etbRed,
-            UIColor.etOrange,
+            UIColor.etGrayBlue,
             UIColor.etGreen,
             UIColor.etBlue,
-            UIColor.etPurple,
-            UIColor.etPink,
             UIColor.etYellow,
-            UIColor.etGrayBlue
+            UIColor.etPurple
         ]
     )
     
@@ -29,8 +27,22 @@ final class AnalyticsViewModel {
     private var expensesByCategory: [String: [Expense]] = [:]
     private var sortedCategories: [String] = []
     private var isAscending = false
+    private var categoryColors: [String: UIColor] = [:]
     
     // MARK: - Methods
+    
+    func getColorForCategory(_ category: String) -> UIColor {
+        if let color = categoryColors[category] {
+            return color
+        }
+        
+        // Если для категории еще нет цвета, назначаем следующий доступный
+        let availableColors = colorCategory.value
+        let colorIndex = categoryColors.count % availableColors.count
+        let color = availableColors[colorIndex]
+        categoryColors[category] = color
+        return color
+    }
     
     func getAllExpenses() -> [Expense] {
         return expensesByDate.values.flatMap { $0 }
@@ -55,7 +67,8 @@ final class AnalyticsViewModel {
     }
     
     func sortCategories() {
-        sortedCategories = expensesByCategory.keys.sorted { category1, category2 in
+        let categories = Array(expensesByCategory.keys)
+        sortedCategories = categories.sorted { category1, category2 in
             let sum1 = expensesByCategory[category1]?.reduce(0) { $0 + $1.expense } ?? 0
             let sum2 = expensesByCategory[category2]?.reduce(0) { $0 + $1.expense } ?? 0
             return isAscending ? sum1 < sum2 : sum1 > sum2

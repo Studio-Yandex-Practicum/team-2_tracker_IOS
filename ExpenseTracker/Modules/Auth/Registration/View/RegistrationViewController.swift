@@ -114,17 +114,7 @@ final class RegistrationViewController: UIViewController {
         registrationViewModel.isLoggedIn.bind { [weak self] isLoggedIn in
             guard let self else { return }
             if isLoggedIn {
-                let alert = UIAlertController(
-                    title: AlertLabels.Title.registration,
-                    message: AlertLabels.Message.registrationSuccess,
-                    preferredStyle: .alert
-                )
-                
-                alert.addAction(UIAlertAction(title: AlertLabels.Button.ok, style: .default) { [weak self] _ in
-                    self?.coordinator?.completeAuth()
-                })
-                
-                self.present(alert, animated: true)
+                coordinator?.completeAuth()
             }
         }
         

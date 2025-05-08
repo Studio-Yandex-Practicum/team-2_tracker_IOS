@@ -55,17 +55,7 @@ final class PasswordRecoveryViewController: UIViewController {
         viewModel.letterWasSent.bind { [weak self] letterWasSent in
             guard let self else { return }
             if letterWasSent {
-                let alert = UIAlertController(
-                    title: AlertLabels.Title.passwordRecovery,
-                    message: AlertLabels.Message.passwordRecoveryEmailSent,
-                    preferredStyle: .alert
-                )
-                
-                alert.addAction(UIAlertAction(title: AlertLabels.Button.ok, style: .default) { [weak self] _ in
-                    self?.coordinator?.dismissAllFlows()
-                })
-                
-                self.present(alert, animated: true)
+                self.coordinator?.dismissAllFlows()
             }
         }
         

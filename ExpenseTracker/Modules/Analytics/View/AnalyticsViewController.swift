@@ -121,6 +121,7 @@ final class AnalyticsViewController: UIViewController {
     }()
     
     // MARK: - Initialization
+    
     init(viewModel: AnalyticsViewModel, expensesViewmModel: ExpensesViewModel) {
         self.viewModel = viewModel
         self.expensesViewModel = expensesViewmModel
@@ -132,6 +133,7 @@ final class AnalyticsViewController: UIViewController {
     }
     
     // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -140,6 +142,7 @@ final class AnalyticsViewController: UIViewController {
     }
     
     // MARK: - Setup
+    
     private func setupUI() {
         view.backgroundColor = .etBackground
         expenseCategoryTable.register(AnalyticsTableCell.self, forCellReuseIdentifier: "ExpenseCategoryCell")
@@ -184,6 +187,7 @@ final class AnalyticsViewController: UIViewController {
     }
     
     // MARK: - UI Updates
+    
     private func updateMoneyLabel(with amount: Decimal) {
         let numberFormatter = NumberFormatter()
         numberFormatter.numberStyle = .decimal
@@ -267,30 +271,31 @@ final class AnalyticsViewController: UIViewController {
         }
         
         var chartData: [(value: Double, color: UIColor)] = []
+        let sortedCategories = viewModel.getSortedCategories()
         
         // Добавляем первую категорию в начало
-        if let firstCategory = viewModel.getSortedCategories().first,
+        if let firstCategory = sortedCategories.first,
            let expenses = viewModel.getExpensesByCategory()[firstCategory] {
             let categoryAmount = expenses.reduce(0) { $0 + $1.expense }
             let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue
-            chartData.append((value: percentage / 2, color: viewModel.colorCategory.value[0]))
+            chartData.append((value: percentage / 2, color: viewModel.getColorForCategory(firstCategory)))
         }
         
         // Добавляем остальные категории
-        for (index, category) in viewModel.getSortedCategories().dropFirst().enumerated() {
+        for category in sortedCategories.dropFirst() {
             if let expenses = viewModel.getExpensesByCategory()[category] {
                 let categoryAmount = expenses.reduce(0) { $0 + $1.expense }
                 let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue
-                chartData.append((value: percentage, color: viewModel.colorCategory.value[(index + 1) % viewModel.colorCategory.value.count]))
+                chartData.append((value: percentage, color: viewModel.getColorForCategory(category)))
             }
         }
         
         // Добавляем первую категорию в конец (половина значения)
-        if let firstCategory = viewModel.getSortedCategories().first,
+        if let firstCategory = sortedCategories.first,
            let expenses = viewModel.getExpensesByCategory()[firstCategory] {
             let categoryAmount = expenses.reduce(0) { $0 + $1.expense }
             let percentage = NSDecimalNumber(decimal: categoryAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue
-            chartData.append((value: percentage, color: viewModel.colorCategory.value[0]))
+            chartData.append((value: percentage, color: viewModel.getColorForCategory(firstCategory)))
         }
         
         donutChartView.configure(with: chartData, overlapAngle: 8)
@@ -320,6 +325,7 @@ final class AnalyticsViewController: UIViewController {
     }
     
     // MARK: - Filter Methods
+    
     private func setupFilterButtonState(for button: UIButton, with period: PeriodType) {
         button.isSelected.toggle()
         [dayButton, weekButton, monthButton, yearButton].forEach {
@@ -520,6 +526,7 @@ final class AnalyticsViewController: UIViewController {
     }
     
     // MARK: - Helper Methods
+    
     private func reloadTable() {
         expenseCategoryTable.reloadData()
         updateDonutChart()
@@ -540,7 +547,7 @@ final class AnalyticsViewController: UIViewController {
         if let expenses = expensesByCategory[category] {
             let totalAmount = expenses.reduce(0) { $0 + $1.expense }
             let percentage = (NSDecimalNumber(decimal: totalAmount).doubleValue / NSDecimalNumber(decimal: viewModel.totalAmount.value).doubleValue) * 100
-            let color = viewModel.colorCategory.value[indexPath.row % viewModel.colorCategory.value.count]
+            let color = viewModel.getColorForCategory(category)
             
             let cellViewModel = AnalyticsTableCell.AnalyticsCellModel(
                 category: category,
@@ -555,6 +562,7 @@ final class AnalyticsViewController: UIViewController {
     }
     
     // MARK: - Actions
+    
     @objc private func sortButtonTapped() {
         viewModel.toggleSortOrder()
         updateSortButtonImage()
