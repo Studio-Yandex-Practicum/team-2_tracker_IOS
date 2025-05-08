@@ -114,7 +114,17 @@ final class RegistrationViewController: UIViewController {
         registrationViewModel.isLoggedIn.bind { [weak self] isLoggedIn in
             guard let self else { return }
             if isLoggedIn {
-                coordinator?.completeAuth()
+                let alert = UIAlertController(
+                    title: AlertLabels.Title.registration,
+                    message: AlertLabels.Message.registrationSuccess,
+                    preferredStyle: .alert
+                )
+                
+                alert.addAction(UIAlertAction(title: AlertLabels.Button.ok, style: .default) { [weak self] _ in
+                    self?.coordinator?.completeAuth()
+                })
+                
+                self.present(alert, animated: true)
             }
         }
         
@@ -307,7 +317,30 @@ final class RegistrationViewController: UIViewController {
     
     @objc
     private func showAuthFlow() {
-        coordinator?.dismissCurrentFlow()
+        if hasUnsavedChanges() {
+            let alert = UIAlertController(
+                title: AlertLabels.Title.registration,
+                message: AlertLabels.Message.interruptRegistration,
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: AlertLabels.Button.cancel, style: .cancel))
+            alert.addAction(UIAlertAction(title: AlertLabels.Button.exit, style: .destructive) { [weak self] _ in
+                self?.coordinator?.dismissCurrentFlow()
+            })
+            
+            present(alert, animated: true)
+        } else {
+            coordinator?.dismissCurrentFlow()
+        }
+    }
+    
+    private func hasUnsavedChanges() -> Bool {
+        let hasEmail = !(loginTextField.textField.text?.isEmpty ?? true)
+        let hasPassword = !(passwordTextField.textField.text?.isEmpty ?? true)
+        let hasConfirmPassword = !(repeatPasswordTextField.textField.text?.isEmpty ?? true)
+        
+        return hasEmail || hasPassword || hasConfirmPassword
     }
     
     @objc

@@ -55,7 +55,17 @@ final class PasswordRecoveryViewController: UIViewController {
         viewModel.letterWasSent.bind { [weak self] letterWasSent in
             guard let self else { return }
             if letterWasSent {
-                self.coordinator?.dismissAllFlows()
+                let alert = UIAlertController(
+                    title: AlertLabels.Title.passwordRecovery,
+                    message: AlertLabels.Message.passwordRecoveryEmailSent,
+                    preferredStyle: .alert
+                )
+                
+                alert.addAction(UIAlertAction(title: AlertLabels.Button.ok, style: .default) { [weak self] _ in
+                    self?.coordinator?.dismissAllFlows()
+                })
+                
+                self.present(alert, animated: true)
             }
         }
         
@@ -128,7 +138,26 @@ final class PasswordRecoveryViewController: UIViewController {
     
     @objc
     private func showAuthFlow() {
-        coordinator?.dismissCurrentFlow()
+        if hasUnsavedChanges() {
+            let alert = UIAlertController(
+                title: AlertLabels.Title.passwordRecovery,
+                message: AlertLabels.Message.interruptPasswordRecovery,
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: AlertLabels.Button.cancel, style: .cancel))
+            alert.addAction(UIAlertAction(title: AlertLabels.Button.interrupt, style: .destructive) { [weak self] _ in
+                self?.coordinator?.dismissCurrentFlow()
+            })
+            
+            present(alert, animated: true)
+        } else {
+            coordinator?.dismissCurrentFlow()
+        }
+    }
+    
+    private func hasUnsavedChanges() -> Bool {
+        return !(emailTextField.textField.text?.isEmpty ?? true)
     }
     
     @objc
