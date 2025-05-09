@@ -8,9 +8,8 @@ final class NewCategoryViewController: UIViewController {
     
     weak var delegate: CreateCategoryDelegate?
     weak var coordinator: ExpensesCoordinator?
-//    private var viewModel = CategoryViewModel()
-    private var newCategoryView: String = ""
     
+    private var newCategoryView: String = ""
     private let icons: [String] = (0...12).map { String($0) }
     private var selectedIndexPath: IndexPath?
     private var customNavigationBar: CustomBackBarItem?
@@ -23,7 +22,7 @@ final class NewCategoryViewController: UIViewController {
         return stackView
     }()
 
-    private let newCategoryTextField: MainTextField = {
+    private lazy var newCategoryTextField: MainTextField = {
         let textField = MainTextField(placeholder: CategoryLabel.categoryName.rawValue)
         textField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
         return textField
@@ -46,7 +45,7 @@ final class NewCategoryViewController: UIViewController {
     
     private let saveButton: MainButton = {
         let button = MainButton(title: ButtonAction.save.rawValue)
-        button.isEnabled = true
+        button.isEnabled = false
         button.backgroundColor = .etInactive
         return button
     }()
@@ -97,30 +96,32 @@ final class NewCategoryViewController: UIViewController {
     }
     
     func updateSaveButton() {
-        let hasSelectedCategories = (newCategoryTextField.text != "")
-        
-        saveButton.isEnabled = hasSelectedCategories
-        saveButton.backgroundColor = hasSelectedCategories ? .etAccent : .etInactive
-//        if saveButton.isEnabled {
-//            saveButton.backgroundColor = .etAccent
-//        } else {
-//            saveButton.backgroundColor = .etInactive
-//        }
+        guard
+            let categoryName = newCategoryTextField.text,
+            let categoryIconSelected = selectedIndexPath
+        else { return }
+       
+        let categoryNameWithoutSpaces = categoryName.replacingOccurrences(of: " ", with: "")
+        saveButton.isEnabled = !categoryNameWithoutSpaces.isEmpty
+        saveButton.backgroundColor = !categoryNameWithoutSpaces.isEmpty ? .etAccent : .etInactive
     }
     
     @objc
     private func textFieldDidChange() {
-//        updateSaveButton()
+        updateSaveButton()
     }
     
     @objc
     private func saveNewCategory() {
+        guard
+            let categoryName = newCategoryTextField.text,
+            let categoryIcon = Asset.Icon(rawValue: newCategoryView)
+        else { return }
         
-        var category: CategoryMain?
-        category = CategoryMain(title: newCategoryTextField.text ?? "", icon: Asset.Icon(rawValue: newCategoryView) ?? .customCat)
-        guard let category = category else { return }
+        let categoryNameWithoutSpaces = categoryName.replacingOccurrences(of: " ", with: "")
+        let newCategory = CategoryMain(title: categoryNameWithoutSpaces, icon: categoryIcon)
         
-        delegate?.createcategory(category)
+        delegate?.createcategory(newCategory)
         coordinator?.dismissCurrentFlow()
     }
 
@@ -150,8 +151,8 @@ extension NewCategoryViewController: UICollectionViewDelegateFlowLayout, UIColle
             selectedIndexPath = indexPath
             collectionView.reloadItems(at: [indexPath] + (previousIndexPath.map { [$0] } ?? []))
             newCategoryView = icons[indexPath.row]
-            guard newCategoryView != nil else { return }
         }
+        updateSaveButton()
     }
 
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {

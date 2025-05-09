@@ -50,6 +50,7 @@ final class CategorySelectionViewController: UIViewController {
         tableView.backgroundColor = .etBackground
         tableView.contentInset = UIEdgeInsets(top: 26, left: 0, bottom: 0, right: 0)
         tableView.allowsMultipleSelection = !isSelectionFlow
+        tableView.showsVerticalScrollIndicator = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
