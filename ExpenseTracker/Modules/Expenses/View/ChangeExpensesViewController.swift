@@ -336,7 +336,6 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         else { return }
         
         let decimalAmount = convertToDecimal(from: stringAmount)
-        print(decimalAmount)
         let expense = Expense(id: UUID(), expense: decimalAmount, category: Category(id: UUID(), name: category, icon: Asset.Icon.cafe), date: datePicker.date, note: addNote.text)
 
         delegate?.createExpense(expense)

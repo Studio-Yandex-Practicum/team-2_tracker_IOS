@@ -219,23 +219,34 @@ final class ExpensesTableCell: UITableViewCell {
     func configure(with expense: Expense) {
         expenceImage.image = UIImage(named: expense.category.icon.rawValue)?.withTintColor(.etButtonLabel)
         categoryMoney.text = expense.category.name
+        let amount = expense.formattedAsRuble
+        labelMoneyCash.text = amount
         noteMoney.text = expense.note
         
-        let numberFormatter = NumberFormatter()
-        numberFormatter.numberStyle = .decimal
-        numberFormatter.groupingSeparator = " "
-        numberFormatter.decimalSeparator = ","
-        
-        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: expense.expense)) {
-            // Проверяем, заканчивается ли число на ",00"
-            if formattedAmount.hasSuffix(",00") {
-                // Убираем ",00" из строки
-                let wholeNumber = String(formattedAmount.dropLast(3))
-                labelMoneyCash.text = wholeNumber + " " + currency
-            } else {
-                labelMoneyCash.text = formattedAmount + " " + currency
-            }
+        // Если нет описания, центрируем название категории
+        if expense.note.isEmpty {
+            // Обновляем констрейнты для центрирования
+            NSLayoutConstraint.deactivate([
+                categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+                noteMoney.topAnchor.constraint(equalTo: categoryMoney.bottomAnchor, constant: 4)
+            ])
+            
+            NSLayoutConstraint.activate([
+                categoryMoney.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+            ])
+        } else {
+            // Возвращаем стандартные констрейнты
+            NSLayoutConstraint.deactivate([
+                categoryMoney.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
+            ])
+            
+            NSLayoutConstraint.activate([
+                categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
+                noteMoney.topAnchor.constraint(equalTo: categoryMoney.bottomAnchor, constant: 4)
+            ])
         }
+        
+        setupCell()
     }
     
     func hideSeparator() {
