@@ -1,7 +1,7 @@
 import Foundation
 
 var expensesMockData: [Expense] = [
-    Expense(id: UUID(), expense: 5500, category: Category(id: UUID(), name: "Продукты", icon: .groceries), date: Date(timeIntervalSinceNow: 0), note: "Примечание"),
+    Expense(id: UUID(), expense: 5500.87, category: Category(id: UUID(), name: "Продукты", icon: .groceries), date: Date(timeIntervalSinceNow: 0), note: "Примечание"),
     Expense(id: UUID(), expense: 3500, category: Category(id: UUID(), name: "Продукты", icon: .groceries), date: Date(timeIntervalSinceNow: -86400), note: ""),
     Expense(id: UUID(), expense: 1000, category: Category(id: UUID(), name: "Дом", icon: .home), date: Date(timeIntervalSinceNow: -86400), note: "Примечание"),
     

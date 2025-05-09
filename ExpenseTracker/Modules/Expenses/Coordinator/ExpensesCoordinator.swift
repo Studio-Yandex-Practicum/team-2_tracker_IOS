@@ -23,11 +23,28 @@ final class ExpensesCoordinator: Coordinator {
         navigationController.setViewControllers([expensesViewController], animated: true)
     }
     
-    func showAddExpenseFlow() {
+    func showAddExpenseFlow(with delegate: CreateExpenseDelegate) {
         let addExpenseViewController = ChangeExpensesViewController(.add)
         addExpenseViewController.coordinator = self
+        addExpenseViewController.delegate = delegate
         addExpenseViewController.hidesBottomBarWhenPushed = true
         navigationController.pushViewController(addExpenseViewController, animated: true)
+    }
+    
+    func showChangeExpenseFlow(with delegate: CreateExpenseDelegate) {
+        let addExpenseViewController = ChangeExpensesViewController(.change)
+        addExpenseViewController.coordinator = self
+        addExpenseViewController.delegate = delegate
+        addExpenseViewController.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(addExpenseViewController, animated: true)
+    }
+    
+    func showCategorySelectionOneFlow(with delegateExpence: CategoryForExpenseDelegate) {
+        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: true)
+        categorySelectionController.coordinator = self
+        categorySelectionController.delegateExpence = delegateExpence
+        categorySelectionController.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(categorySelectionController, animated: true)
     }
     
     func showCategorySelectionFlow() {
@@ -36,7 +53,7 @@ final class ExpensesCoordinator: Coordinator {
         categorySelectionController.hidesBottomBarWhenPushed = true
         navigationController.pushViewController(categorySelectionController, animated: true)
     }
-    
+        
     func showCategoryFiltersFlow() {
         let categorySelectionController = CategorySelectionViewController(isSelectionFlow: false)
         categorySelectionController.coordinator = self
@@ -45,9 +62,10 @@ final class ExpensesCoordinator: Coordinator {
         navigationController.pushViewController(categorySelectionController, animated: true)
     }
     
-    func showNewCategoryFlow() {
+    func showNewCategoryFlow(with delegate: CreateCategoryDelegate) {
         let newCategoryController = NewCategoryViewController()
         newCategoryController.coordinator = self
+        newCategoryController.delegate = delegate
         newCategoryController.hidesBottomBarWhenPushed = true
         navigationController.pushViewController(newCategoryController, animated: true)
     }

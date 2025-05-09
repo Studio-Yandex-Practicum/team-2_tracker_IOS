@@ -4,7 +4,6 @@ final class ExpensesViewController: UIViewController {
     
     weak var coordinator: ExpensesCoordinator?
     
-  //  var expenses: [Expense] = expensesMockData
     var viewModel = ExpensesViewModel()
     var totalAmount: Decimal = 12345
     var currency = Currency.ruble.rawValue
@@ -21,7 +20,7 @@ final class ExpensesViewController: UIViewController {
         formatter.timeZone = TimeZone.current
         return formatter
     }()
-
+    
     // MARK: - UI components
     
     private lazy var dateLabel: UILabel = {
@@ -168,7 +167,9 @@ final class ExpensesViewController: UIViewController {
     
     @objc
     private func addExpense() {
-        coordinator?.showAddExpenseFlow()
+//        let addExpenseVC = NewCategoryViewController()
+//        addExpenseVC.delegate = self
+        coordinator?.showAddExpenseFlow(with: self)
     }
     
     // Пример вызова для кнопок
@@ -176,24 +177,28 @@ final class ExpensesViewController: UIViewController {
     private func dayButtonTapped() {
         selectedDateRange = nil
         setupFilterButtonState(for: dayButton, with: .day)
+        setupLayout()
     }
     
     @objc
     private func weekButtonTapped() {
         selectedDateRange = nil
         setupFilterButtonState(for: weekButton, with: .week)
+        setupLayout()
     }
     
     @objc
     private func monthButtonTapped() {
         selectedDateRange = nil
         setupFilterButtonState(for: monthButton, with: .month)
+        setupLayout()
     }
     
     @objc
     private func yearButtonTapped() {
         selectedDateRange = nil
         setupFilterButtonState(for: yearButton, with: .year)
+        setupLayout()
     }
     
     @objc
@@ -437,7 +442,7 @@ final class ExpensesViewController: UIViewController {
         }
         expenseMoneyTable.reloadData()
     }
-
+    
     private func calculatePeriod(for selectedDate: Date, periodType: PeriodType) -> (Date, Date) {
         let currentCalendar = Calendar.current
         var startDate: Date
@@ -498,7 +503,31 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+//<<<<<<< HEAD
         guard let cell = expenseMoneyTable.dequeueReusableCell(withIdentifier: "ExpensesTableCell", for: indexPath) as? ExpensesTableCell else {
+//=======
+//        if let cell = expenseMoneyTable.dequeueReusableCell(withIdentifier: "ExpensesTableCell", for: indexPath) as? ExpensesTableCell {
+//            cell.contentView.backgroundColor = .etBackground
+//            cell.separatorInset = UIEdgeInsets.zero
+//            cell.selectionStyle = .none
+//            cell.translatesAutoresizingMaskIntoConstraints = true
+//            
+//            
+//            
+//            let dateKeys = Array(expensesByDate.keys)
+//            let dateKey = dateKeys.sorted(by: >)
+//            if let expense = expensesByDate[dateKey[indexPath.section]]?[indexPath.row] {
+//                cell.categoryMoney.text = expense.category
+//                let amount = expense.formattedAsRuble
+//                cell.labelMoneyCash.text = amount
+//                cell.noteMoney.text = expense.note
+//                cell.setupCell()
+//                
+//            }
+//            return cell
+//        } else {
+//            // Обработка случая, когда не удалось произвести преобразование
+//>>>>>>> 74eb8003c8ef4c31c4cdf4d59f7449cda7f9cd62
             print("Failed to dequeue a cell of type ExpensesTableCell")
             return UITableViewCell()
         }
@@ -528,9 +557,11 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         
         let delete = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
             
+            
             let alert = UIAlertController(title: "Уверены, что хотите удалить?", message: "", preferredStyle: .alert)
             
             alert.addAction(UIAlertAction(title: "Выход", style: .cancel, handler: nil))
+//<<<<<<< HEAD
             alert.addAction(UIAlertAction(title: "ОК", style: .default) { [weak self] _ in
                 guard let self = self else { return }
                 
@@ -557,6 +588,14 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
                         tableView.reloadData()
                     }
                 }
+//=======
+//            alert.addAction(UIAlertAction(title: "ОК", style: .default) { _ in
+//                
+//                tableView.deleteRows(at: [indexPath].reversed(), with: .automatic)
+//                tableView.reloadData()
+//                
+//                
+//>>>>>>> 74eb8003c8ef4c31c4cdf4d59f7449cda7f9cd62
             })
             self?.present(alert, animated: true)
             
@@ -568,8 +607,12 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         let addExpense = UIContextualAction(style: .normal, title: nil) { _, _, completion in
             
             let changeVC = ChangeExpensesViewController(.change)
-            
             self.navigationController?.pushViewController(changeVC, animated: true)
+//<<<<<<< HEAD
+//=======
+//            self.navigationController?.setNavigationBarHidden(true, animated: .init())
+//            changeVC.navigationController?.isNavigationBarHidden = true
+//>>>>>>> 74eb8003c8ef4c31c4cdf4d59f7449cda7f9cd62
             completion(true)
         }
         
@@ -578,6 +621,8 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         
         return UISwipeActionsConfiguration(actions: [delete, addExpense])
     }
+    
+    //
     
     // Закругление углов секции таблицы
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
@@ -606,7 +651,7 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium // Формат отображения даты
-
+        
         let headerView = ExpensesTableHeaders()
         let dateKeys = Array(expensesByDate.keys)
         let dateKey = dateKeys.sorted(by: >)
@@ -665,5 +710,18 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
     @objc
     private func calendarButtonTapped() {
         DateRangeCalendarView.show(in: self, delegate: self)
+    }
+}
+
+extension ExpensesViewController: CreateCategoryDelegate {
+    func createcategory(_ newCategory: CategoryMain) {
+    }
+}
+
+
+extension ExpensesViewController: CreateExpenseDelegate {
+    func createExpense(_ newExpense: Expense) {
+        viewModel.addExpense(expense: newExpense)
+        loadExpenses(for: dayToday, periodType: nil)
     }
 }

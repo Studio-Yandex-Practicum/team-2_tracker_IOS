@@ -8,8 +8,9 @@ final class ExpensesViewModel {
         return expenses.reduce(0) { $0 + $1.expense }
     }
     
-    func addExpense(expense: Expense) {
+    func addExpense(expense: Expense) -> [Expense] {
         expenses.append(expense)
+        return expenses
     }
     
     func removeExpense(_ expense: Expense) {
@@ -49,4 +50,6 @@ final class ExpensesViewModel {
         }
         return expensesByDate
     }
+    
+  
 }

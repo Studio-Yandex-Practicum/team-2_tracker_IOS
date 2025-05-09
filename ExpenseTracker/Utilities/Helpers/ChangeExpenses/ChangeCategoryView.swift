@@ -10,7 +10,7 @@ final class ChangeCategoryView: UIView {
         return expenceView
     }()
     
-    private lazy var categoryImage: UIImageView = {
+     lazy var categoryImage: UIImageView = {
         let categoryImage = UIImageView()
         categoryImage.image = UIImage(named: Asset.Icon.cafe.rawValue)?.withTintColor(.etButtonLabel) // будет меняться
         categoryImage.translatesAutoresizingMaskIntoConstraints = false
@@ -25,11 +25,10 @@ final class ChangeCategoryView: UIView {
         return categoryButton
     }()
     
-    private let categoryLabel: UILabel = {
+     let categoryLabel: UILabel = {
         let categoryLabel = UILabel()
         categoryLabel.font = AppTextStyle.body.font
         categoryLabel.textColor = .etCards
-        categoryLabel.text = "Здоровье"
         categoryLabel.translatesAutoresizingMaskIntoConstraints = false
         return categoryLabel
     }()
@@ -58,9 +57,11 @@ final class ChangeCategoryView: UIView {
             
             categoryImage.centerYAnchor.constraint(equalTo: categoryView.centerYAnchor),
             categoryImage.centerXAnchor.constraint(equalTo: categoryView.centerXAnchor),
+            categoryImage.widthAnchor.constraint(equalToConstant: 20),
+            categoryImage.heightAnchor.constraint(equalToConstant: 20),
             
             categoryLabel.centerYAnchor.constraint(equalTo: self.centerYAnchor),
-            categoryLabel.leadingAnchor.constraint(equalTo: categoryView.trailingAnchor, constant: 16),
+            categoryLabel.leadingAnchor.constraint(equalTo: categoryView.trailingAnchor, constant: 8),
             categoryLabel.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -50),
             
             categoryButton.centerYAnchor.constraint(equalTo: self.centerYAnchor),

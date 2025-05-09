@@ -61,7 +61,7 @@ enum Asset {
         case notificationOff = "notification-off"
         
         // Custom categories
-        case customCat = "customCat"
+        case customCat = "0"
         case customCat1 = "1"
         case customCat2 = "2"
         case customCat3 = "3"

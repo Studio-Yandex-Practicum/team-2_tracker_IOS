@@ -145,7 +145,6 @@ extension MoneyTextField: UITextFieldDelegate {
                 textField.text = formattedInteger
             }
         }
-        
         return false
     }
     
