@@ -1,8 +1,15 @@
 import UIKit
 
-final class NewCategoryViewController: UIViewController {
+protocol CreateCategoryDelegate: AnyObject {
+    func createcategory(_ newCategory: CategoryMain)
+}
 
+final class NewCategoryViewController: UIViewController {
+    
+    weak var delegate: CreateCategoryDelegate?
     weak var coordinator: ExpensesCoordinator?
+//    private var viewModel = CategoryViewModel()
+    private var newCategoryView: String = ""
     
     private let icons: [String] = (0...12).map { String($0) }
     private var selectedIndexPath: IndexPath?
@@ -18,9 +25,10 @@ final class NewCategoryViewController: UIViewController {
 
     private let newCategoryTextField: MainTextField = {
         let textField = MainTextField(placeholder: CategoryLabel.categoryName.rawValue)
+        textField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
         return textField
     }()
-
+    
     private lazy var categoryIconsCollectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -35,12 +43,18 @@ final class NewCategoryViewController: UIViewController {
         collectionView.heightAnchor.constraint(equalToConstant: (view.frame.width - 32) / 1.5).isActive = true
         return collectionView
     }()
-
-    private let saveButton = MainButton(title: ButtonAction.save.rawValue)
-
+    
+    private let saveButton: MainButton = {
+        let button = MainButton(title: ButtonAction.save.rawValue)
+        button.isEnabled = true
+        button.backgroundColor = .etInactive
+        return button
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupSaveCategoryButton()
     }
 
     private func setupUI() {
@@ -77,11 +91,43 @@ final class NewCategoryViewController: UIViewController {
             saveButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
     }
+    
+    private func setupSaveCategoryButton() {
+        saveButton.addTarget(self, action: #selector(saveNewCategory), for: .touchUpInside)
+    }
+    
+    func updateSaveButton() {
+        let hasSelectedCategories = (newCategoryTextField.text != "")
+        
+        saveButton.isEnabled = hasSelectedCategories
+        saveButton.backgroundColor = hasSelectedCategories ? .etAccent : .etInactive
+//        if saveButton.isEnabled {
+//            saveButton.backgroundColor = .etAccent
+//        } else {
+//            saveButton.backgroundColor = .etInactive
+//        }
+    }
+    
+    @objc
+    private func textFieldDidChange() {
+//        updateSaveButton()
+    }
+    
+    @objc
+    private func saveNewCategory() {
+        
+        var category: CategoryMain?
+        category = CategoryMain(title: newCategoryTextField.text ?? "", icon: Asset.Icon(rawValue: newCategoryView) ?? .customCat)
+        guard let category = category else { return }
+        
+        delegate?.createcategory(category)
+        coordinator?.dismissCurrentFlow()
+    }
 
     @objc
     private func backTo() {
         coordinator?.dismissCurrentFlow()
-    }
+    }  
 }
 
 extension NewCategoryViewController: UICollectionViewDelegateFlowLayout, UICollectionViewDataSource {
@@ -103,6 +149,8 @@ extension NewCategoryViewController: UICollectionViewDelegateFlowLayout, UIColle
             let previousIndexPath = selectedIndexPath
             selectedIndexPath = indexPath
             collectionView.reloadItems(at: [indexPath] + (previousIndexPath.map { [$0] } ?? []))
+            newCategoryView = icons[indexPath.row]
+            guard newCategoryView != nil else { return }
         }
     }
 

@@ -1,6 +1,6 @@
 import UIKit
 
 struct CategoryMain {
-    let title: String
-    let icon: Asset.Icon
+    var title: String
+    var icon: Asset.Icon
 }

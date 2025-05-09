@@ -4,7 +4,6 @@ final class ExpensesViewController: UIViewController {
     
     weak var coordinator: ExpensesCoordinator?
     
-  //  var expenses: [Expense] = expensesMockData
     var viewModel = ExpensesViewModel()
     var totalAmount: Decimal = 12345
     var currency = Currency.ruble.rawValue
@@ -21,7 +20,7 @@ final class ExpensesViewController: UIViewController {
         formatter.timeZone = TimeZone.current
         return formatter
     }()
-
+    
     // MARK: - UI components
     
     private lazy var dateLabel: UILabel = {
@@ -159,7 +158,9 @@ final class ExpensesViewController: UIViewController {
     
     @objc
     private func addExpense() {
-        coordinator?.showAddExpenseFlow()
+//        let addExpenseVC = NewCategoryViewController()
+//        addExpenseVC.delegate = self
+        coordinator?.showAddExpenseFlow(with: self)
     }
     
     // Пример вызова для кнопок
@@ -181,12 +182,14 @@ final class ExpensesViewController: UIViewController {
     private func monthButtonTapped() {
         selectedDateRange = nil
         setupFilterButtonState(for: monthButton, with: .month)
+        setupLayout()
     }
     
     @objc
     private func yearButtonTapped() {
         selectedDateRange = nil
         setupFilterButtonState(for: yearButton, with: .year)
+        setupLayout()
     }
     
     @objc
@@ -384,7 +387,7 @@ final class ExpensesViewController: UIViewController {
         }
         expenseMoneyTable.reloadData()
     }
-
+    
     private func calculatePeriod(for selectedDate: Date, periodType: PeriodType) -> (Date, Date) {
         let currentCalendar = Calendar.current
         var startDate: Date
@@ -433,8 +436,8 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
             cell.selectionStyle = .none
             cell.translatesAutoresizingMaskIntoConstraints = true
             
-         
-    
+            
+            
             let dateKeys = Array(expensesByDate.keys)
             let dateKey = dateKeys.sorted(by: >)
             if let expense = expensesByDate[dateKey[indexPath.section]]?[indexPath.row] {
@@ -461,16 +464,16 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         
         let delete = UIContextualAction(style: .normal, title: nil) { _, _, completion in
             
-           
+            
             let alert = UIAlertController(title: "Уверены, что хотите удалить?", message: "", preferredStyle: .alert)
             
             alert.addAction(UIAlertAction(title: "Выход", style: .cancel, handler: nil))
             alert.addAction(UIAlertAction(title: "ОК", style: .default) { _ in
- 
-                tableView.deleteRows(at: [indexPath].reversed(), with: .automatic)
-               tableView.reloadData()
                 
-            
+                tableView.deleteRows(at: [indexPath].reversed(), with: .automatic)
+                tableView.reloadData()
+                
+                
             })
             self.present(alert, animated: true)
             
@@ -495,7 +498,7 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         return UISwipeActionsConfiguration(actions: [delete, addExpense])
     }
     
-//
+    //
     
     // Закругление углов секции таблицы
     func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
@@ -524,7 +527,7 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium // Формат отображения даты
-
+        
         let headerView = ExpensesTableHeaders()
         let dateKeys = Array(expensesByDate.keys)
         let dateKey = dateKeys.sorted(by: >)
@@ -583,4 +586,19 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
     @objc private func calendarButtonTapped() {
         DateRangeCalendarView.show(in: self, delegate: self)
     }
+}
+
+extension ExpensesViewController: CreateCategoryDelegate {
+    func createcategory(_ newCategory: CategoryMain) {
+    }
+}
+
+
+extension ExpensesViewController: CreateExpenseDelegate {
+    func createExpense(_ newExpense: Expense) {
+        viewModel.addExpense(expense: newExpense)
+        loadExpenses(for: dayToday, periodType: nil)
+    }
+    
+    
 }

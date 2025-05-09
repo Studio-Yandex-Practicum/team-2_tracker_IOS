@@ -4,19 +4,27 @@ protocol CategorySelectionDelegate: AnyObject {
     func didSelectCategories(_ categories: Set<String>)
 }
 
+protocol CategoryForExpenseDelegate: AnyObject {
+    func didSelectCategoryForExpense(_ categories: CategoryMain)
+}
+
 final class CategorySelectionViewController: UIViewController {
     
     // MARK: - Private Properties
     
     weak var coordinator: ExpensesCoordinator?
     weak var delegate: CategorySelectionDelegate?
+    weak var delegateExpence: CategoryForExpenseDelegate?
+    
     private var isSelectionFlow: Bool
     private var customNavigationBar: CustomBackBarItem?
     private var isAllCategoriesSelected: Bool = false
     private var selectedIndexPath: IndexPath?
-    private let categories: [CategoryMain] = CategoryProvider.baseCategories
+    private var categories: [CategoryMain] = CategoryProvider.baseCategories
     private var filteredCategories: [CategoryMain] = []
     private var selectedCategories: Set<String> = []
+    private var categoryForExpense = CategoryMain(title: "", icon: Asset.Icon(rawValue: "") ?? .customCat)
+//    private var viewModel = CategoryViewModel()
     
     // MARK: - UI Elements
     
@@ -29,7 +37,7 @@ final class CategorySelectionViewController: UIViewController {
     private lazy var categoryTableViewButton: CategoryTableViewButton = {
         let button = isSelectionFlow ? CategoryTableViewButton(title: CategoryLabel.createCategory.rawValue, isShownButton: isSelectionFlow) : CategoryTableViewButton(title: CategoryLabel.allCategories.rawValue, isShownButton: isSelectionFlow)
         button.layer.cornerRadius = 12
-        button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner] 
         return button
     }()
     
@@ -175,11 +183,12 @@ final class CategorySelectionViewController: UIViewController {
 
     @objc
     private func showNewCategoryFlow() {
-        coordinator?.showNewCategoryFlow()
+        coordinator?.showNewCategoryFlow(with: self)
     }
     
     @objc
     private func setButtonTapped() {
+        delegateExpence?.didSelectCategoryForExpense(categoryForExpense)
         delegate?.didSelectCategories(selectedCategories)
         coordinator?.dismissCurrentFlow()
     }
@@ -273,6 +282,10 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let category = filteredCategories[indexPath.row]
+    
+       //  получение категории для трат
+        categoryForExpense.title = filteredCategories[indexPath.row].title
+        categoryForExpense.icon = filteredCategories[indexPath.row].icon
         selectedCategories.insert(category.title)
         updateCellSelection(at: indexPath, isSelected: true)
         
@@ -281,6 +294,7 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
                 updateCellSelection(at: previousIndexPath, isSelected: false)
             }
             selectedIndexPath = indexPath
+            
         }
         updateSetButtonState()
     }
@@ -301,3 +315,12 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
         cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
     }
 }
+
+extension CategorySelectionViewController: CreateCategoryDelegate {
+    func createcategory(_ newCategory: CategoryMain) {
+        categories.append(newCategory)
+        filteredCategories = categories
+        categoryTableViewController.reloadData()
+    }
+}
+    

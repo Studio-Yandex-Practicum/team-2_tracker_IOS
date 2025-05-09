@@ -1,5 +1,9 @@
 import UIKit
 
+protocol CreateExpenseDelegate: AnyObject {
+    func createExpense(_ newExpense: Expense)
+}
+
 enum NewCategory {
     
     case add
@@ -25,7 +29,8 @@ enum NewCategory {
 }
 
 final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
-    
+       
+    weak var delegate: CreateExpenseDelegate?
     weak var coordinator: ExpensesCoordinator?
     private var customNavigationBar: CustomBackBarItem?
     
@@ -33,6 +38,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     private var currentDate: Int?
     var categoryName: String = ""
     var categoryImageName: String = ""
+    var newAddExpense = true
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -113,9 +119,12 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     private lazy var saveButton: MainButton = {
         let saveButton = MainButton(title: newCategory.saveButtonText)
+        saveButton.isEnabled = true
+        saveButton.backgroundColor = .etInactive
         return saveButton
     }()
     
+
     init(_ newCategory: NewCategory) {
         self.newCategory = newCategory
         super.init(nibName: nil, bundle: nil)
@@ -137,8 +146,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         setupLayout()
         updatePlaceholderVisibility()
         setupNote()
-        updateSaveButton()
-        setupGestures()
+      setupSaveCategoryButton()
     }
     
     private func setupGestures() {
@@ -158,7 +166,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     @objc
     private func addCategoryButton() {
-        coordinator?.showCategorySelectionFlow()
+        coordinator?.showCategorySelectionOneFlow(with: self)
     }
     
     func setupNote() {
@@ -196,9 +204,6 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
             addDate.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             addDate.heightAnchor.constraint(equalToConstant: 50),
             
-//            datePicker.centerYAnchor.constraint(equalTo: addDate.centerYAnchor),
-//            datePicker.leadingAnchor.constraint(equalTo: addDate.leadingAnchor, constant: 8),
-            
             addMoney.topAnchor.constraint(equalTo: addDate.bottomAnchor, constant: 12),
             addMoney.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             addMoney.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
@@ -216,13 +221,23 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         ]
         
         if newCategory == .add {
-            view.addSubview(addCategory)
-            constraints += [
-                addCategory.bottomAnchor.constraint(equalTo: addDate.topAnchor, constant: -12),
-                addCategory.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-                addCategory.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-                addCategory.heightAnchor.constraint(equalToConstant: 50)
-            ]
+            if newAddExpense == true {
+                view.addSubview(addCategory)
+                constraints += [
+                    addCategory.bottomAnchor.constraint(equalTo: addDate.topAnchor, constant: -12),
+                    addCategory.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+                    addCategory.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+                    addCategory.heightAnchor.constraint(equalToConstant: 50)
+                    ]
+                    } else {
+                        view.addSubview(changeCategory)
+                        constraints += [
+                            changeCategory.bottomAnchor.constraint(equalTo: addDate.topAnchor, constant: -12),
+                            changeCategory.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+                            changeCategory.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+                            changeCategory.heightAnchor.constraint(equalToConstant: 50)
+                            ]
+                    }
         } else {
             view.addSubview(changeCategory)
             constraints += [
@@ -245,13 +260,16 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         updateSaveButton()
     }
     
+    private func setupSaveCategoryButton() {
+        
+        saveButton.addTarget(self, action: #selector(saveNewExpense), for: .touchUpInside)
+    }
+    
     func updateSaveButton() {
-        saveButton.isEnabled = addMoney.text?.isEmpty == false && Double(addMoney.text ?? "") != nil
-        if saveButton.isEnabled {
-            saveButton.backgroundColor = .etAccent
-        } else {
-            saveButton.backgroundColor = .etInactive
-        }
+        let hasSelectedMoney = (addMoney.text != "")
+        saveButton.isEnabled = hasSelectedMoney
+        saveButton.isEnabled = true
+        saveButton.backgroundColor = hasSelectedMoney ? .etAccent : .etInactive
     }
     
     @objc
@@ -274,4 +292,29 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
         present(alert, animated: true)
     }
+    
+    @objc
+    private func saveNewExpense() {
+        
+        var expense: Expense?
+        
+        var money = Double(addMoney.text ?? "")
+        guard let money = money else { return }
+        var category = changeCategory.categoryLabel.text
+        expense = Expense(id: UUID(), expense: Decimal(money), category: category ?? "" , date: datePicker.date, note: addNote.text)
+        
+
+        guard let expense = expense else { return }
+
+        delegate?.createExpense(expense)
+        coordinator?.dismissCurrentFlow()
+    }
+}
+extension ChangeExpensesViewController: CategoryForExpenseDelegate {
+    func didSelectCategoryForExpense(_ categories: CategoryMain) {
+        newAddExpense = false
+        setupLayout()
+        changeCategory.categoryLabel.text = categories.title
+        changeCategory.categoryImage.image = UIImage(named: categories.icon.rawValue)?.withTintColor(.etButtonLabel)
+    }  
 }

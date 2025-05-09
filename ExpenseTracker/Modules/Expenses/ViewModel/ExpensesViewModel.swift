@@ -8,8 +8,9 @@ final class ExpensesViewModel {
         return expenses.reduce(0) { $0 + $1.expense }
     }
     
-    func addExpense(expense: Expense) {
+    func addExpense(expense: Expense) -> [Expense] {
         expenses.append(expense)
+        return expenses
     }
     
     func getAllExpenses() -> [Expense] {
