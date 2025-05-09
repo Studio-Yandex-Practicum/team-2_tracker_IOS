@@ -503,31 +503,7 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//<<<<<<< HEAD
         guard let cell = expenseMoneyTable.dequeueReusableCell(withIdentifier: "ExpensesTableCell", for: indexPath) as? ExpensesTableCell else {
-//=======
-//        if let cell = expenseMoneyTable.dequeueReusableCell(withIdentifier: "ExpensesTableCell", for: indexPath) as? ExpensesTableCell {
-//            cell.contentView.backgroundColor = .etBackground
-//            cell.separatorInset = UIEdgeInsets.zero
-//            cell.selectionStyle = .none
-//            cell.translatesAutoresizingMaskIntoConstraints = true
-//            
-//            
-//            
-//            let dateKeys = Array(expensesByDate.keys)
-//            let dateKey = dateKeys.sorted(by: >)
-//            if let expense = expensesByDate[dateKey[indexPath.section]]?[indexPath.row] {
-//                cell.categoryMoney.text = expense.category
-//                let amount = expense.formattedAsRuble
-//                cell.labelMoneyCash.text = amount
-//                cell.noteMoney.text = expense.note
-//                cell.setupCell()
-//                
-//            }
-//            return cell
-//        } else {
-//            // Обработка случая, когда не удалось произвести преобразование
-//>>>>>>> 74eb8003c8ef4c31c4cdf4d59f7449cda7f9cd62
             print("Failed to dequeue a cell of type ExpensesTableCell")
             return UITableViewCell()
         }
@@ -535,7 +511,10 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         let dateKeys = Array(expensesByDate.keys)
         let dateKey = dateKeys.sorted(by: >)
         
-        if let expense = expensesByDate[dateKey[indexPath.section]]?[indexPath.row] {
+        if let expenses = expensesByDate[dateKey[indexPath.section]] {
+            // Сортируем расходы внутри секции по времени создания (новые сверху)
+            let sortedExpenses = expenses.sorted { $0.date > $1.date }
+            let expense = sortedExpenses[indexPath.row]
             cell.configure(with: expense)
             
             // Скрываем сепаратор для последней ячейки в секции
