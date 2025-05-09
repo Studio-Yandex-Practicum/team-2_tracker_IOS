@@ -6,9 +6,10 @@ final class AnalyticsTableCell: UITableViewCell {
     struct AnalyticsCellModel {
         let category: String
         let amount: Decimal
-        let percentage: Double
+        let percentage: Double?
         let color: UIColor
         let currency: String
+        let isSubCategory: Bool
     }
     
     var currency = Currency.ruble.rawValue
@@ -48,18 +49,25 @@ final class AnalyticsTableCell: UITableViewCell {
         let labelMoney = UILabel()
         labelMoney.text = "15%" // переменная
         labelMoney.textColor = .etSecondaryLabel
-        //        labelMoney.font = AppTextStyle.secondary.font
+        labelMoney.font = AppTextStyle.body.font
         labelMoney.translatesAutoresizingMaskIntoConstraints = false
         return labelMoney
     }()
     
-    lazy var labelMoneyCash: UILabel = {
+    private lazy var labelMoneyCash: UILabel = {
         let labelMoney = UILabel()
         labelMoney.text = "500"
         labelMoney.textColor = .etPrimaryLabel
         labelMoney.font = AppTextStyle.body.font
         labelMoney.translatesAutoresizingMaskIntoConstraints = false
         return labelMoney
+    }()
+    
+    private let customSeparator: UIView = {
+        let view = UIView()
+        view.backgroundColor = .etSeparators
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
@@ -76,6 +84,7 @@ final class AnalyticsTableCell: UITableViewCell {
         backView.addSubview(labelMoneyCash)
         backView.addSubview(categoryMoney)
         backView.addSubview(percentMoney)
+        backView.addSubview(customSeparator)
     }
     
     func setupCell() {
@@ -104,13 +113,16 @@ final class AnalyticsTableCell: UITableViewCell {
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
             labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16),
             
-            categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
             categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
             categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68),
             
-            percentMoney.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
             percentMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
-            percentMoney.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -48)
+            percentMoney.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -48),
+            
+            customSeparator.leadingAnchor.constraint(equalTo: backView.leadingAnchor),
+            customSeparator.trailingAnchor.constraint(equalTo: backView.trailingAnchor),
+            customSeparator.bottomAnchor.constraint(equalTo: backView.bottomAnchor),
+            customSeparator.heightAnchor.constraint(equalToConstant: 1)
         ]
         
         NSLayoutConstraint.activate(constraints)
@@ -134,9 +146,61 @@ final class AnalyticsTableCell: UITableViewCell {
             labelMoneyCash.text = formattedAmount + " " + viewModel.currency
         }
         
-        // Округляем процент по правилам математического округления
-        let roundedPercentage = Int(round(viewModel.percentage))
-        percentMoney.text = "\(roundedPercentage)%"
+        // Удаляем старые констрейнты
+        categoryMoney.removeFromSuperview()
+        percentMoney.removeFromSuperview()
+        expenceView.removeFromSuperview()
+        backView.addSubview(expenceView)
+        backView.addSubview(categoryMoney)
+        backView.addSubview(percentMoney)
+        
+        if viewModel.isSubCategory {
+            // Для подкатегорий центрируем название по вертикали и увеличиваем отступ слева
+            NSLayoutConstraint.activate([
+                expenceView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 50),
+                expenceView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                expenceView.heightAnchor.constraint(equalToConstant: 32),
+                expenceView.widthAnchor.constraint(equalToConstant: 32),
+                
+                categoryMoney.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
+                categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
+                categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68)
+            ])
+            percentMoney.isHidden = true
+        } else {
+            // Для основных категорий показываем проценты
+            NSLayoutConstraint.activate([
+                expenceView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
+                expenceView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+                expenceView.heightAnchor.constraint(equalToConstant: 32),
+                expenceView.widthAnchor.constraint(equalToConstant: 32),
+                
+                categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
+                categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
+                categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68),
+                
+                percentMoney.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
+                percentMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
+                percentMoney.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -48)
+            ])
+            percentMoney.isHidden = false
+            
+            if let percentage = viewModel.percentage {
+                // Округляем процент по правилам математического округления
+                let roundedPercentage = Int(round(percentage))
+                percentMoney.text = "\(roundedPercentage)%"
+            } else {
+                percentMoney.text = nil
+            }
+        }
+    }
+    
+    func hideSeparator() {
+        customSeparator.isHidden = true
+    }
+    
+    func showSeparator() {
+        customSeparator.isHidden = false
     }
     
     override func prepareForReuse() {
@@ -145,5 +209,15 @@ final class AnalyticsTableCell: UITableViewCell {
         labelMoneyCash.text = nil
         percentMoney.text = nil
         expenceView.backgroundColor = .etIconsBG
+        percentMoney.isHidden = false
+        customSeparator.isHidden = false
+        
+        // Удаляем все констрейнты при переиспользовании ячейки
+        categoryMoney.removeFromSuperview()
+        percentMoney.removeFromSuperview()
+        expenceView.removeFromSuperview()
+        backView.addSubview(expenceView)
+        backView.addSubview(categoryMoney)
+        backView.addSubview(percentMoney)
     }
 }

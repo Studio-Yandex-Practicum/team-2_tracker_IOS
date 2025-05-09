@@ -14,7 +14,9 @@ final class AnalyticsViewModel {
             UIColor.etGreen,
             UIColor.etBlue,
             UIColor.etYellow,
-            UIColor.etPurple
+            UIColor.etPurple,
+            UIColor.etPink,
+            UIColor.etOrange
         ]
     )
     
@@ -38,10 +40,17 @@ final class AnalyticsViewModel {
         
         // Если для категории еще нет цвета, назначаем следующий доступный
         let availableColors = colorCategory.value
-        let colorIndex = categoryColors.count % availableColors.count
-        let color = availableColors[colorIndex]
-        categoryColors[category] = color
-        return color
+        let usedColors = Set(categoryColors.values)
+        let unusedColors = availableColors.filter { !usedColors.contains($0) }
+        
+        // Если есть неиспользованные цвета, берем первый из них
+        if let newColor = unusedColors.first {
+            categoryColors[category] = newColor
+            return newColor
+        }
+        
+        // Если все цвета использованы, используем фиолетовый (цвет для "Остальные")
+        return .etPurple
     }
     
     func getAllExpenses() -> [Expense] {
@@ -55,7 +64,7 @@ final class AnalyticsViewModel {
     }
     
     func updateExpensesData(with expenses: [Expense]) {
-        expensesByCategory = Dictionary(grouping: expenses) { $0.category }
+        expensesByCategory = Dictionary(grouping: expenses) { $0.category.name }
         sortCategories()
         totalAmount.value = expenses.reduce(0) { $0 + $1.expense }
     }
@@ -77,7 +86,6 @@ final class AnalyticsViewModel {
     
     func toggleSortOrder() {
         isAscending.toggle()
-        sortCategories()
     }
     
     func getSortedCategories() -> [String] {

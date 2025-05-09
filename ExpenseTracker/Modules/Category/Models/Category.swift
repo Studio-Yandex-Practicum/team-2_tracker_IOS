@@ -1,10 +1,7 @@
 import Foundation
 
-struct CategoryET {
+struct Category {
     let id: UUID
     let name: String
-    let icon: Asset.Icon.RawValue
-    let expenses: [Expense]
+    let icon: Asset.Icon
 }
-
-

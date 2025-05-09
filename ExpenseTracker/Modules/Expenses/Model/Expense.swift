@@ -4,7 +4,7 @@ struct Expense {
     
     let id: UUID
     let expense: Decimal
-    let category: String
+    let category: Category
     let date: Date
     let note: String
    
@@ -29,4 +29,3 @@ struct Expense {
         return formatter.string(from: expense as NSNumber  ) ?? ""
     }
 }
-
