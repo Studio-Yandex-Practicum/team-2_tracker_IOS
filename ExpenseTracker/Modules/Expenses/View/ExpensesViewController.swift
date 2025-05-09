@@ -463,6 +463,24 @@ final class ExpensesViewController: UIViewController {
         }
         return (startDate, endDate)
     }
+    
+    private func updateMoneyLabel() {
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
+        numberFormatter.groupingSeparator = " "
+        numberFormatter.decimalSeparator = ","
+        
+        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: totalAmount)) {
+            // Если сумма равна 0, показываем только "0"
+            if totalAmount == 0 {
+                labelMoney.text = "0 " + currency
+            } else {
+                labelMoney.text = formattedAmount + " " + currency
+            }
+        }
+    }
 }
 
 // MARK: - TableView Functhion
@@ -508,23 +526,44 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         
-        let delete = UIContextualAction(style: .normal, title: nil) { _, _, completion in
+        let delete = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
             
             let alert = UIAlertController(title: "Уверены, что хотите удалить?", message: "", preferredStyle: .alert)
             
             alert.addAction(UIAlertAction(title: "Выход", style: .cancel, handler: nil))
-            alert.addAction(UIAlertAction(title: "ОК", style: .default) { _ in
- 
-                tableView.deleteRows(at: [indexPath], with: .automatic)
-               tableView.reloadData()
+            alert.addAction(UIAlertAction(title: "ОК", style: .default) { [weak self] _ in
+                guard let self = self else { return }
+                
+                // Получаем расход для удаления
+                let dateKeys = Array(self.expensesByDate.keys).sorted(by: >)
+                if let expense = self.expensesByDate[dateKeys[indexPath.section]]?[indexPath.row] {
+                    // Удаляем расход из модели данных
+                    self.viewModel.removeExpense(expense)
+                    
+                    // Обновляем данные
+                    self.expensesByDate = self.viewModel.getAllExpensesByDate()
+                    
+                    // Обновляем общую сумму
+                    self.totalAmount = self.viewModel.totalAmount
+                    
+                    // Обновляем UI
+                    self.updateMoneyLabel()
+                    
+                    // Проверяем, нужно ли показать пустое состояние
+                    if self.expensesByDate.isEmpty {
+                        self.showEmptyState()
+                    } else {
+                        // Обновляем таблицу
+                        tableView.reloadData()
+                    }
+                }
             })
-            self.present(alert, animated: true)
-            
+            self?.present(alert, animated: true)
             
             completion(true)
         }
         delete.image = UIImage(named: "delete")?.withTintColor(.etButtonLabel)
-        delete.backgroundColor = .etbRed
+        delete.backgroundColor = UIColor.etbRed
         
         let addExpense = UIContextualAction(style: .normal, title: nil) { _, _, completion in
             

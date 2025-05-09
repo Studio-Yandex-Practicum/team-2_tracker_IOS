@@ -314,19 +314,6 @@ final class AnalyticsViewController: UIViewController {
                     otherCategories = Array(categoryAmounts.dropFirst(6).map { $0.category })
                 }
             }
-            
-            // Проверяем каждую основную категорию (кроме первой)
-            for i in 1..<mainCategories.count {
-                let currentCategory = mainCategories[i]
-                let currentAmount = expensesByCategory[currentCategory]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-                
-                // Если сумма "Остальных" больше текущей категории
-                if otherAmount > currentAmount {
-                    // Перемещаем текущую категорию в "Остальные"
-                    otherCategories.insert(currentCategory, at: 0)
-                    mainCategories.remove(at: i)
-                }
-            }
         } else {
             // Если категорий 6 или меньше, все они основные
             mainCategories = sortedByAmount
@@ -337,8 +324,16 @@ final class AnalyticsViewController: UIViewController {
             total + (expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0)
         }
         
-        // Добавляем основные категории
-        for category in mainCategories {
+        // Добавляем первую половину первой категории в начало
+        if let firstCategory = mainCategories.first,
+           let expenses = expensesByCategory[firstCategory] {
+            let categoryAmount = expenses.reduce(Decimal(0)) { $0 + $1.expense }
+            let percentage = Double(truncating: categoryAmount as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber) / 2
+            chartData.append((value: percentage, color: viewModel.getColorForCategory(firstCategory)))
+        }
+        
+        // Добавляем остальные основные категории
+        for category in mainCategories.dropFirst() {
             if let expenses = expensesByCategory[category] {
                 let categoryAmount = expenses.reduce(Decimal(0)) { $0 + $1.expense }
                 let percentage = Double(truncating: categoryAmount as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber)
@@ -353,6 +348,14 @@ final class AnalyticsViewController: UIViewController {
             }
             let otherPercentage = Double(truncating: otherAmount as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber)
             chartData.append((value: otherPercentage, color: .etPurple))
+        }
+        
+        // Добавляем вторую половину первой категории в конец
+        if let firstCategory = mainCategories.first,
+           let expenses = expensesByCategory[firstCategory] {
+            let categoryAmount = expenses.reduce(Decimal(0)) { $0 + $1.expense }
+            let percentage = Double(truncating: categoryAmount as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber) / 2
+            chartData.append((value: percentage, color: viewModel.getColorForCategory(firstCategory)))
         }
         
         donutChartView.configure(with: chartData, overlapAngle: AnalyticsConstants.donutChartOverlapAngle)

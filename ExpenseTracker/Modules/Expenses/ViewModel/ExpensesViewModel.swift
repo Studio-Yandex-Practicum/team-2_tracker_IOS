@@ -12,6 +12,10 @@ final class ExpensesViewModel {
         expenses.append(expense)
     }
     
+    func removeExpense(_ expense: Expense) {
+        expenses.removeAll { $0.id == expense.id }
+    }
+    
     func getAllExpenses() -> [Expense] {
         return expenses
     }
