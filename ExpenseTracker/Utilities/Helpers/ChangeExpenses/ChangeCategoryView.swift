@@ -73,10 +73,10 @@ final class ChangeCategoryView: UIView {
 
     func addCategoryButton(_ target: Any?, action: Selector) {
        categoryButton.addTarget(target, action: action, for: .touchUpInside)
-   }
+    }
     
     func configure(with text: String, image: UIImage?) {
         categoryImage.image = image
         categoryLabel.text = text
-       }
+    }
 }

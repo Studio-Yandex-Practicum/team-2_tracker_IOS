@@ -87,6 +87,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     private lazy var addMoney: MoneyTextField = {
         let addMoney = MoneyTextField(placeholder: "Сумма расхода")
+        addMoney.moneyTextFieldDelegate = self
         addMoney.setupToggleButton(Asset.Icon.currencyRuble.rawValue)
         addMoney.textColor = .etCards
         addMoney.keyboardType = .decimalPad
@@ -273,7 +274,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
                 }
             }
         }
-        updateSaveButton()
+        updateButtonState()
     }
     
     @objc private func addComma() {
@@ -284,23 +285,6 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     @objc private func doneButtonTapped() {
         addMoney.resignFirstResponder()
-    }
-    
-    func updateSaveButton() {
-        print(addMoney.text)
-        guard
-            let stringAmount = addMoney.text,
-            let category = changeCategory.categoryLabel.text, !category.isEmpty
-        else { return }
-
-        let amount = convertToDecimal(from: stringAmount)
-        saveButton.isEnabled = amount > 0
-        
-        if saveButton.isEnabled {
-            saveButton.backgroundColor = .etAccent
-        } else {
-            saveButton.backgroundColor = .etInactive
-        }
     }
         
     private func setupSaveCategoryButton() {
@@ -360,6 +344,25 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     }
 }
 
+extension ChangeExpensesViewController: MoneyTextFieldDelegate {
+    
+    func updateButtonState() {
+        guard
+            let stringAmount = addMoney.text, addMoney.text != "0",
+            let category = changeCategory.categoryLabel.text, !category.isEmpty
+        else { return }
+        
+        let amount = convertToDecimal(from: stringAmount)
+        saveButton.isEnabled = amount > 0
+        
+        if saveButton.isEnabled {
+            saveButton.backgroundColor = .etAccent
+        } else {
+            saveButton.backgroundColor = .etInactive
+        }
+    }
+}
+
 extension ChangeExpensesViewController: CategoryForExpenseDelegate {
     
     func didSelectCategoryForExpense(_ categories: CategoryMain) {
@@ -367,6 +370,6 @@ extension ChangeExpensesViewController: CategoryForExpenseDelegate {
         setupLayout()
         changeCategory.categoryLabel.text = categories.title
         changeCategory.categoryImage.image = UIImage(named: categories.icon.rawValue)?.withTintColor(.etButtonLabel)
-        updateSaveButton()
+        updateButtonState()
     }
 }

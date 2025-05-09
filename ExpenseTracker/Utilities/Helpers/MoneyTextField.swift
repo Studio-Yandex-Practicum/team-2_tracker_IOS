@@ -1,6 +1,12 @@
 import UIKit
 
+protocol MoneyTextFieldDelegate: AnyObject {
+    func updateButtonState()
+}
+
 final class MoneyTextField: UITextField {
+    
+    weak var moneyTextFieldDelegate: MoneyTextFieldDelegate?
     
     // MARK: - Private Properties
     
@@ -12,6 +18,7 @@ final class MoneyTextField: UITextField {
         height: Constants.defaultHeight
     ))
     
+    var isMoreThanZero: Bool = false
     
     // MARK: - Init
     
@@ -77,20 +84,6 @@ final class MoneyTextField: UITextField {
         rightViewMode = .always
     }
     
-    
-    
-    // MARK: - UITextFieldDelegate
-    
-    //extension AuthTextField: UITextFieldDelegate {
-    //    private func textFieldDidBeginEditing(_ textField: UITextField) {
-    //        layer.borderColor = UIColor.etAccent.cgColor
-    //    }
-    //
-    //    private func textFieldDidEndEditing(_ textField: UITextField) {
-    //        layer.borderColor = UIColor.clear.cgColor
-    //    }
-    //}
-    
     // MARK: - Constants
     
     private enum Constants {
@@ -108,6 +101,11 @@ extension MoneyTextField: UITextFieldDelegate {
         if string.isEmpty {
             let newText = (currentText as NSString).replacingCharacters(in: range, with: string)
             textField.text = newText
+            moneyTextFieldDelegate?.updateButtonState()
+            return false
+        }
+        
+        if string.first == "," && currentText.isEmpty {
             return false
         }
         
@@ -132,6 +130,10 @@ extension MoneyTextField: UITextFieldDelegate {
             return false
         }
         
+        if string.first == "0" && currentText.isEmpty {
+            return false
+        }
+   
         // Формируем новый текст
         let updatedText = (currentText as NSString).replacingCharacters(in: range, with: string)
         
@@ -145,6 +147,8 @@ extension MoneyTextField: UITextFieldDelegate {
                 textField.text = formattedInteger
             }
         }
+        moneyTextFieldDelegate?.updateButtonState()
+        
         return false
     }
     
