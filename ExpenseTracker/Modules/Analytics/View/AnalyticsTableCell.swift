@@ -5,6 +5,7 @@ final class AnalyticsTableCell: UITableViewCell {
     // MARK: - Model
     struct AnalyticsCellModel {
         let category: String
+        let icon: Asset.Icon
         let amount: Decimal
         let percentage: Double?
         let color: UIColor
@@ -136,6 +137,7 @@ final class AnalyticsTableCell: UITableViewCell {
     func configure(with viewModel: AnalyticsCellModel) {
         categoryMoney.text = viewModel.category
         expenceView.backgroundColor = viewModel.color
+        expenceImage.image = UIImage(named: viewModel.icon.rawValue)?.withTintColor(.etButtonLabel)
         
         let numberFormatter = NumberFormatter()
         numberFormatter.numberStyle = .decimal

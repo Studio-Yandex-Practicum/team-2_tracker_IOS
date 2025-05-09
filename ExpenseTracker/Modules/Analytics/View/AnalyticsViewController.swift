@@ -212,17 +212,23 @@ final class AnalyticsViewController: UIViewController {
     
     private func updateDateLabel() {
         if let dateRange = viewModel.getSelectedDateRange() {
-            let startDate = dateFormatter.string(from: dateRange.start)
-            let endDate = dateFormatter.string(from: dateRange.end)
-            dateLabel.text = startDate + " - " + endDate
-        } else if let periodType = getSelectedPeriodType() {
-            let (startDate, endDate) = calculatePeriod(for: viewModel.dayToday.value, periodType: periodType)
-            let startDateString = dateFormatter.string(from: startDate)
-            let endDateString = dateFormatter.string(from: endDate)
-            
-            if Calendar.current.isDate(startDate, inSameDayAs: endDate) {
-                dateLabel.text = startDateString
+            if Calendar.current.isDate(dateRange.start, inSameDayAs: dateRange.end) {
+                // Если начальная и конечная даты совпадают, показываем только одну дату
+                dateLabel.text = dateFormatter.string(from: dateRange.start)
             } else {
+                let startDate = dateFormatter.string(from: dateRange.start)
+                let endDate = dateFormatter.string(from: dateRange.end)
+                dateLabel.text = startDate + " - " + endDate
+            }
+        } else if let periodType = getSelectedPeriodType() {
+            let (startDate, endDate) = viewModel.calculatePeriod(for: viewModel.dayToday.value, periodType: periodType)
+            
+            if periodType == .day {
+                // Для фильтра "День" показываем только сегодняшнюю дату
+                dateLabel.text = dateFormatter.string(from: viewModel.dayToday.value)
+            } else {
+                let startDateString = dateFormatter.string(from: startDate)
+                let endDateString = dateFormatter.string(from: endDate)
                 dateLabel.text = startDateString + " - " + endDateString
             }
         } else {
@@ -267,97 +273,7 @@ final class AnalyticsViewController: UIViewController {
     }
     
     private func updateDonutChart() {
-        if viewModel.getExpensesByCategory().isEmpty {
-            // Если нет данных, показываем неактивную диаграмму
-            let data: [(value: Double, color: UIColor)] = [(1, .etInactive)]
-            donutChartView.configure(with: data, size: AnalyticsConstants.donutChartSize, lineWidth: AnalyticsConstants.donutChartLineWidth, overlapAngle: 0)
-            return
-        }
-        
-        var chartData: [(value: Double, color: UIColor)] = []
-        let sortedCategories = viewModel.getSortedCategories()
-        let expensesByCategory = viewModel.getExpensesByCategory()
-        
-        // Сортируем категории по сумме расходов (от большей к меньшей)
-        let sortedByAmount = sortedCategories.sorted { category1, category2 in
-            let amount1 = expensesByCategory[category1]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-            let amount2 = expensesByCategory[category2]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-            return amount1 > amount2
-        }
-        
-        // Вычисляем суммы расходов для каждой категории
-        let categoryAmounts = sortedByAmount.map { category -> (category: String, amount: Decimal) in
-            let amount = expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-            return (category: category, amount: amount)
-        }
-        
-        // Распределяем категории на основные и "Остальные"
-        var mainCategories: [String] = []
-        var otherCategories: [String] = []
-        
-        if categoryAmounts.count > 6 {
-            // Берем первые 5 категорий как основные
-            mainCategories = Array(categoryAmounts.prefix(5).map { $0.category })
-            
-            // Вычисляем сумму расходов для "Остальных"
-            let otherAmount = categoryAmounts.dropFirst(5).reduce(Decimal(0)) { $0 + $1.amount }
-            
-            // Проверяем, нужно ли добавить 6-ю категорию в "Остальные"
-            if categoryAmounts.count > 5 {
-                let sixthCategoryAmount = categoryAmounts[5].amount
-                if otherAmount > sixthCategoryAmount {
-                    // Если сумма "Остальных" больше 6-й категории, добавляем её в "Остальные"
-                    otherCategories = Array(categoryAmounts.dropFirst(5).map { $0.category })
-                } else {
-                    // Иначе добавляем 6-ю категорию в основные
-                    mainCategories.append(categoryAmounts[5].category)
-                    otherCategories = Array(categoryAmounts.dropFirst(6).map { $0.category })
-                }
-            }
-        } else {
-            // Если категорий 6 или меньше, все они основные
-            mainCategories = sortedByAmount
-        }
-        
-        // Получаем общую сумму расходов
-        let totalExpense = sortedCategories.reduce(Decimal(0)) { total, category in
-            total + (expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0)
-        }
-        
-        // Добавляем первую половину первой категории в начало
-        if let firstCategory = mainCategories.first,
-           let expenses = expensesByCategory[firstCategory] {
-            let categoryAmount = expenses.reduce(Decimal(0)) { $0 + $1.expense }
-            let percentage = Double(truncating: categoryAmount as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber) / 2
-            chartData.append((value: percentage, color: viewModel.getColorForCategory(firstCategory)))
-        }
-        
-        // Добавляем остальные основные категории
-        for category in mainCategories.dropFirst() {
-            if let expenses = expensesByCategory[category] {
-                let categoryAmount = expenses.reduce(Decimal(0)) { $0 + $1.expense }
-                let percentage = Double(truncating: categoryAmount as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber)
-                chartData.append((value: percentage, color: viewModel.getColorForCategory(category)))
-            }
-        }
-        
-        // Добавляем "Остальное" и его подкатегории как одну секцию
-        if !otherCategories.isEmpty {
-            let otherAmount = otherCategories.reduce(Decimal(0)) { total, category in
-                total + (expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0)
-            }
-            let otherPercentage = Double(truncating: otherAmount as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber)
-            chartData.append((value: otherPercentage, color: .etPurple))
-        }
-        
-        // Добавляем вторую половину первой категории в конец
-        if let firstCategory = mainCategories.first,
-           let expenses = expensesByCategory[firstCategory] {
-            let categoryAmount = expenses.reduce(Decimal(0)) { $0 + $1.expense }
-            let percentage = Double(truncating: categoryAmount as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber) / 2
-            chartData.append((value: percentage, color: viewModel.getColorForCategory(firstCategory)))
-        }
-        
+        let chartData = viewModel.getChartData()
         donutChartView.configure(with: chartData, overlapAngle: AnalyticsConstants.donutChartOverlapAngle)
         animateDonutChart()
     }
@@ -387,25 +303,50 @@ final class AnalyticsViewController: UIViewController {
     // MARK: - Filter Methods
     
     private func setupFilterButtonState(for button: UIButton, with period: PeriodType) {
-        button.isSelected.toggle()
-        [dayButton, weekButton, monthButton, yearButton].forEach {
-            $0.backgroundColor = button == $0 && $0.isSelected ? .etAccent : .etCardsToggled
-            let titleColor = button == $0 && $0.isSelected ? UIColor.etButtonLabel : UIColor.etCards
-            $0.setTitleColor(titleColor, for: .normal)
-            
-            if button != $0 {
-                $0.isSelected = false
-            }
+        // Если кнопка уже выбрана, сбрасываем фильтр
+        if button.isSelected {
+            button.isSelected = false
+            button.backgroundColor = .etCardsToggled
+            button.setTitleColor(.etCards, for: .normal)
+            viewModel.resetFilters()
+            updateUI()
+            return
         }
-        filterExpenses()
+        
+        // Сбрасываем состояние всех кнопок
+        [dayButton, weekButton, monthButton, yearButton].forEach {
+            $0.isSelected = false
+            $0.backgroundColor = .etCardsToggled
+            $0.setTitleColor(.etCards, for: .normal)
+        }
+        
+        // Устанавливаем новое состояние
+        button.isSelected = true
+        button.backgroundColor = .etAccent
+        button.setTitleColor(.etButtonLabel, for: .normal)
+        
+        // Обновляем период в ViewModel
+        viewModel.setSelectedPeriodType(period)
+        updateUI()
+    }
+    
+    private func updateUI() {
+        let filteredExpenses = viewModel.getFilteredExpenses()
+        updateMoneyLabel(with: viewModel.totalAmount.value)
+        updateDateLabel()
+        reloadTable()
+        
+        if viewModel.getExpensesByCategory().isEmpty {
+            showEmptyState()
+        } else {
+            showTableState()
+        }
     }
     
     private func filterExpenses() {
-        let filteredExpenses = getFilteredExpenses()
+        let filteredExpenses = viewModel.getFilteredExpenses()
         viewModel.updateExpensesData(with: filteredExpenses)
-        updateUI(with: filteredExpenses)
-        updateDateLabel()
-        reloadTable()
+        updateUI()
     }
     
     private func getFilteredExpenses() -> [Expense] {
@@ -602,171 +543,19 @@ final class AnalyticsViewController: UIViewController {
             $0.backgroundColor = .etCardsToggled
             $0.setTitleColor(.etCards, for: .normal)
         }
+        viewModel.resetFilters()
+        updateUI()
     }
     
     private func configureCell(_ cell: AnalyticsTableCell, at indexPath: IndexPath) {
-        let sortedCategories = viewModel.getSortedCategories()
         let expensesByCategory = viewModel.getExpensesByCategory()
+        let categories = Array(expensesByCategory.keys).sorted()
+        let category = categories[indexPath.section]
+        let isSubCategory = indexPath.section == categories.count - 1 && category == AnalyticsConstants.otherCategoriesTitle
         
-        // Сортируем категории по сумме расходов (от большей к меньшей)
-        let sortedByAmount = sortedCategories.sorted { category1, category2 in
-            let amount1 = expensesByCategory[category1]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-            let amount2 = expensesByCategory[category2]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-            return amount1 > amount2
-        }
-        
-        // Вычисляем суммы расходов для каждой категории
-        let categoryAmounts = sortedByAmount.map { category -> (category: String, amount: Decimal) in
-            let amount = expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-            return (category: category, amount: amount)
-        }
-        
-        // Распределяем категории на основные и "Остальные"
-        var mainCategories: [String] = []
-        var otherCategories: [String] = []
-        
-        if categoryAmounts.count > 6 {
-            // Берем первые 5 категорий как основные
-            mainCategories = Array(categoryAmounts.prefix(5).map { $0.category })
-            
-            // Вычисляем сумму расходов для "Остальных"
-            let otherAmount = categoryAmounts.dropFirst(5).reduce(Decimal(0)) { $0 + $1.amount }
-            
-            // Проверяем, нужно ли добавить 6-ю категорию в "Остальные"
-            if categoryAmounts.count > 5 {
-                let sixthCategoryAmount = categoryAmounts[5].amount
-                if otherAmount > sixthCategoryAmount {
-                    // Если сумма "Остальных" больше 6-й категории, добавляем её в "Остальные"
-                    otherCategories = Array(categoryAmounts.dropFirst(5).map { $0.category })
-                } else {
-                    // Иначе добавляем 6-ю категорию в основные
-                    mainCategories.append(categoryAmounts[5].category)
-                    otherCategories = Array(categoryAmounts.dropFirst(6).map { $0.category })
-                }
-            }
-            
-            // Проверяем каждую основную категорию (кроме первой)
-            for i in 1..<mainCategories.count {
-                let currentCategory = mainCategories[i]
-                let currentAmount = expensesByCategory[currentCategory]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-                
-                // Если сумма "Остальных" больше текущей категории
-                if otherAmount > currentAmount {
-                    // Перемещаем текущую категорию в "Остальные"
-                    otherCategories.insert(currentCategory, at: 0)
-                    mainCategories.remove(at: i)
-                }
-            }
-        } else {
-            // Если категорий 6 или меньше, все они основные
-            mainCategories = sortedByAmount
-        }
-        
-        // Получаем общую сумму расходов
-        let totalExpense = sortedCategories.reduce(Decimal(0)) { total, category in
-            total + (expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0)
-        }
-        
-        // Определяем, какую категорию показывать
-        let category: String
-        let isOtherCategory: Bool
-        let isSubCategory: Bool
-        
-        if viewModel.getIsAscending() {
-            // При сортировке по возрастанию
-            if !otherCategories.isEmpty && indexPath.row == 0 {
-                // Показываем "Остальное" в начале только если есть больше 6 категорий
-                category = AnalyticsConstants.otherCategoriesTitle
-                isOtherCategory = true
-                isSubCategory = false
-            } else if !otherCategories.isEmpty && indexPath.row <= otherCategories.count {
-                // Показываем подкатегории "Остального" сразу после него
-                category = otherCategories[indexPath.row - 1]
-                isOtherCategory = true
-                isSubCategory = true
-            } else {
-                // Показываем основные категории, отсортированные по возрастанию
-                let mainCategoriesSorted = mainCategories.sorted { category1, category2 in
-                    let amount1 = expensesByCategory[category1]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-                    let amount2 = expensesByCategory[category2]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-                    return amount1 < amount2 // Сортировка по возрастанию
-                }
-                let offset = otherCategories.isEmpty ? 0 : otherCategories.count + 1
-                let index = indexPath.row - offset
-                if index < mainCategoriesSorted.count {
-                    category = mainCategoriesSorted[index]
-                } else {
-                    category = mainCategoriesSorted.last ?? sortedByAmount.first ?? ""
-                }
-                isOtherCategory = false
-                isSubCategory = false
-            }
-        } else {
-            // При сортировке по убыванию
-            if indexPath.row < mainCategories.count {
-                // Показываем основные категории
-                category = mainCategories[indexPath.row]
-                isOtherCategory = false
-                isSubCategory = false
-            } else if !otherCategories.isEmpty && indexPath.row == mainCategories.count {
-                // Показываем "Остальное" только если есть больше 6 категорий
-                category = AnalyticsConstants.otherCategoriesTitle
-                isOtherCategory = true
-                isSubCategory = false
-            } else if !otherCategories.isEmpty {
-                // Показываем подкатегории "Остального" сразу после него
-                let subCategoryIndex = indexPath.row - mainCategories.count - 1
-                if subCategoryIndex < otherCategories.count {
-                    category = otherCategories[subCategoryIndex]
-                } else {
-                    category = otherCategories.last ?? sortedByAmount.first ?? ""
-                }
-                isOtherCategory = true
-                isSubCategory = true
-            } else {
-                // Если нет дополнительных категорий, показываем следующую основную
-                let index = indexPath.row
-                if index < sortedByAmount.count {
-                    category = sortedByAmount[index]
-                } else {
-                    category = sortedByAmount.last ?? ""
-                }
-                isOtherCategory = false
-                isSubCategory = false
-            }
-        }
-        
-        // Получаем сумму расходов для категории
-        let categoryExpense: Decimal
-        let percentage: Double?
-        
-        if category == AnalyticsConstants.otherCategoriesTitle {
-            // Для категории "Остальное" суммируем все подкатегории
-            categoryExpense = otherCategories.reduce(Decimal(0)) { total, category in
-                total + (expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0)
-            }
-            percentage = totalExpense > 0 ? Double(truncating: categoryExpense as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber) * 100 : 0
-        } else {
-            // Для остальных категорий
-            categoryExpense = expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-            percentage = isSubCategory ? nil : (totalExpense > 0 ? Double(truncating: categoryExpense as NSDecimalNumber) / Double(truncating: totalExpense as NSDecimalNumber) * 100 : 0)
-        }
-        
-        // Получаем цвет для категории
-        let color: UIColor
-        if category == AnalyticsConstants.otherCategoriesTitle || isOtherCategory {
-            color = .etPurple
-        } else {
-            color = viewModel.getColorForCategory(category)
-        }
-        
-        // Создаем модель для ячейки
-        let cellModel = AnalyticsTableCell.AnalyticsCellModel(
-            category: category,
-            amount: categoryExpense,
-            percentage: percentage,
-            color: color,
-            currency: viewModel.currency.value,
+        let cellModel = viewModel.getCellModel(
+            for: category,
+            expensesByCategory: expensesByCategory,
             isSubCategory: isSubCategory
         )
         
@@ -789,34 +578,27 @@ final class AnalyticsViewController: UIViewController {
     
     @objc
     private func dayButtonTapped() {
-        viewModel.setSelectedDateRange(nil)
         setupFilterButtonState(for: dayButton, with: .day)
-        updateDateLabel()
     }
     
     @objc
     private func weekButtonTapped() {
-        viewModel.setSelectedDateRange(nil)
         setupFilterButtonState(for: weekButton, with: .week)
-        updateDateLabel()
     }
     
     @objc
     private func monthButtonTapped() {
-        viewModel.setSelectedDateRange(nil)
         setupFilterButtonState(for: monthButton, with: .month)
-        updateDateLabel()
     }
     
     @objc
     private func yearButtonTapped() {
-        viewModel.setSelectedDateRange(nil)
         setupFilterButtonState(for: yearButton, with: .year)
-        updateDateLabel()
     }
     
     @objc
     private func calendarButtonTapped() {
+        // Убираем сброс периода при открытии календаря
         DateRangeCalendarView.show(in: self, delegate: self)
     }
 }
@@ -825,70 +607,7 @@ final class AnalyticsViewController: UIViewController {
 
 extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        let sortedCategories = viewModel.getSortedCategories()
-        let expensesByCategory = viewModel.getExpensesByCategory()
-        
-        // Сортируем категории по сумме расходов (от большей к меньшей)
-        let sortedByAmount = sortedCategories.sorted { category1, category2 in
-            let amount1 = expensesByCategory[category1]?.reduce(0) { $0 + $1.expense } ?? 0
-            let amount2 = expensesByCategory[category2]?.reduce(0) { $0 + $1.expense } ?? 0
-            return amount1 > amount2
-        }
-        
-        // Вычисляем суммы расходов для каждой категории
-        let categoryAmounts = sortedByAmount.map { category -> (category: String, amount: Decimal) in
-            let amount = expensesByCategory[category]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-            return (category: category, amount: amount)
-        }
-        
-        // Распределяем категории на основные и "Остальные"
-        var mainCategories: [String] = []
-        var otherCategories: [String] = []
-        
-        if categoryAmounts.count > 6 {
-            // Берем первые 5 категорий как основные
-            mainCategories = Array(categoryAmounts.prefix(5).map { $0.category })
-            
-            // Вычисляем сумму расходов для "Остальных"
-            let otherAmount = categoryAmounts.dropFirst(5).reduce(Decimal(0)) { $0 + $1.amount }
-            
-            // Проверяем, нужно ли добавить 6-ю категорию в "Остальные"
-            if categoryAmounts.count > 5 {
-                let sixthCategoryAmount = categoryAmounts[5].amount
-                if otherAmount > sixthCategoryAmount {
-                    // Если сумма "Остальных" больше 6-й категории, добавляем её в "Остальные"
-                    otherCategories = Array(categoryAmounts.dropFirst(5).map { $0.category })
-                } else {
-                    // Иначе добавляем 6-ю категорию в основные
-                    mainCategories.append(categoryAmounts[5].category)
-                    otherCategories = Array(categoryAmounts.dropFirst(6).map { $0.category })
-                }
-            }
-            
-            // Проверяем каждую основную категорию (кроме первой)
-            for i in 1..<mainCategories.count {
-                let currentCategory = mainCategories[i]
-                let currentAmount = expensesByCategory[currentCategory]?.reduce(Decimal(0)) { $0 + $1.expense } ?? 0
-                
-                // Если сумма "Остальных" больше текущей категории
-                if otherAmount > currentAmount {
-                    // Перемещаем текущую категорию в "Остальные"
-                    otherCategories.insert(currentCategory, at: 0)
-                    mainCategories.remove(at: i)
-                }
-            }
-        } else {
-            // Если категорий 6 или меньше, все они основные
-            mainCategories = sortedByAmount
-        }
-        
-        // Если категорий 6 или меньше, показываем все категории
-        if otherCategories.isEmpty {
-            return min(sortedByAmount.count, 6)
-        }
-        
-        // Иначе показываем все категории, включая "Остальное" и его подкатегории
-        return mainCategories.count + 1 + otherCategories.count
+        return viewModel.getNumberOfRows()
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -896,7 +615,16 @@ extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
             return UITableViewCell()
         }
         
-        configureCell(cell, at: indexPath)
+        let (category, isSubCategory) = viewModel.getCategoryForRow(at: indexPath)
+        let expensesByCategory = viewModel.getExpensesByCategory()
+        
+        let cellModel = viewModel.getCellModel(
+            for: category,
+            expensesByCategory: expensesByCategory,
+            isSubCategory: isSubCategory
+        )
+        
+        cell.configure(with: cellModel)
         return cell
     }
     
@@ -933,17 +661,22 @@ extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
 
 extension AnalyticsViewController: DateRangeCalendarViewDelegate {
     func didSelectDateRange(start: Date, end: Date) {
+        // Только обновляем временный диапазон, не меняя основной
         viewModel.setTempDateRange((start, end))
         updateDateLabel()
     }
     
     func didConfirmDateRange() {
         if let dateRange = viewModel.getTempDateRange() {
+            // Применяем фильтр только при подтверждении
             viewModel.setSelectedDateRange(dateRange)
-            resetPeriodButtons()
-            filterExpenses()
-            updateDateLabel()
-            reloadTable()
+            updateUI()
         }
+    }
+    
+    func didCancelDateRange() {
+        // При отмене возвращаемся к предыдущему состоянию
+        viewModel.setTempDateRange(nil)
+        updateDateLabel()
     }
 }
