@@ -42,7 +42,7 @@ final class ExpensesTableCell: UITableViewCell {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.spacing = 0
-        stack.alignment = .top
+        stack.alignment = .leading
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -85,75 +85,7 @@ final class ExpensesTableCell: UITableViewCell {
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-
         setupUI()
-    }
-    
-//    func addSubviews() {
-//        expenceView.addSubview(expenceImage)
-//        contentView.addSubview(backView)
-//        backView.addSubview(expenceView)
-//        //        backView.addSubview(categoryMoney)
-//        //        backView.addSubview(noteMoney)
-//        backView.addSubview(labelMoneyCash)
-//    }
-    
-    func setupCell() {
-        
-  //      guard var noteMonewCell = noteMoney.text?.isEmpty ?? nil else { return }
-        
-        var constraints = [
-            
-            backView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            backView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-            backView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            backView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            
-            expenceView.heightAnchor.constraint(equalToConstant: 32),
-            expenceView.widthAnchor.constraint(equalToConstant: 32),
-            expenceView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-            expenceView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 16),
-            
-            expenceImage.centerYAnchor.constraint(equalTo: expenceView.centerYAnchor),
-            expenceImage.centerXAnchor.constraint(equalTo: expenceView.centerXAnchor),
-            
-            labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
-            labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16),
-            
-            customSeparator.leadingAnchor.constraint(equalTo: backView.leadingAnchor),
-            customSeparator.trailingAnchor.constraint(equalTo: backView.trailingAnchor),
-            customSeparator.bottomAnchor.constraint(equalTo: backView.bottomAnchor),
-            customSeparator.heightAnchor.constraint(equalToConstant: 1)
-        ]
-        
-        if noteMoney.text != "" {
-         //   print(noteMonewCell)
-            
-            backView.addSubview(categoryMoney)
-            backView.addSubview(noteMoney)
-            
-            constraints += [
-                categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 8),
-                categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
-                categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68),
-                
-                noteMoney.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -8),
-                noteMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
-                noteMoney.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -48)
-            ]
-            
-        }
-       else {
-            backView.addSubview(categoryMoney)
-            
-            constraints += [
-                categoryMoney.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
-                categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
-                categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68)
-            ]
-        }
-        
-        NSLayoutConstraint.activate(constraints)
     }
     
     required init?(coder: NSCoder) {
@@ -163,24 +95,19 @@ final class ExpensesTableCell: UITableViewCell {
     // MARK: - Setup
     
     private func setupUI() {
-//        addSubviews()
         setupViews()
-        setupCell()
-//        setupConstraints()
+        setupConstraints()
     }
     
     private func setupViews() {
-        // Добавляем основные view
         contentView.addSubview(backView)
         backView.addSubview(expenceView)
         backView.addSubview(labelsStack)
         backView.addSubview(labelMoneyCash)
         backView.addSubview(customSeparator)
         
-        // Настраиваем иконку
         expenceView.addSubview(expenceImage)
         
-        // Настраиваем стек с лейблами
         labelsStack.addArrangedSubview(categoryMoney)
         labelsStack.addArrangedSubview(noteMoney)
     }
@@ -206,16 +133,15 @@ final class ExpensesTableCell: UITableViewCell {
             expenceImage.heightAnchor.constraint(equalToConstant: 20),
             
             // LabelsStack constraints
-            labelsStack.topAnchor.constraint(equalTo: backView.topAnchor, constant: -10),
-        
+            labelsStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
             labelsStack.leadingAnchor.constraint(equalTo: expenceView.trailingAnchor, constant: 8),
             labelsStack.trailingAnchor.constraint(equalTo: labelMoneyCash.leadingAnchor, constant: -16),
-            labelsStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             
             // LabelMoneyCash constraints
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
             labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16),
             
+            // Separator constraints
             customSeparator.leadingAnchor.constraint(equalTo: backView.leadingAnchor),
             customSeparator.trailingAnchor.constraint(equalTo: backView.trailingAnchor),
             customSeparator.bottomAnchor.constraint(equalTo: backView.bottomAnchor),
@@ -236,31 +162,7 @@ final class ExpensesTableCell: UITableViewCell {
         
         noteMoney.text = expense.note
         noteMoney.applyTextStyle(.caption, textStyle: .caption1)
-        
-        // Если нет описания, центрируем название категории
-        if expense.note.isEmpty {
-            // Обновляем констрейнты для центрирования
-            NSLayoutConstraint.deactivate([
-                categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-                noteMoney.topAnchor.constraint(equalTo: categoryMoney.bottomAnchor, constant: 4)
-            ])
-            
-            NSLayoutConstraint.activate([
-                categoryMoney.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
-            ])
-        } else {
-            // Возвращаем стандартные констрейнты
-            NSLayoutConstraint.deactivate([
-                categoryMoney.centerYAnchor.constraint(equalTo: contentView.centerYAnchor)
-            ])
-            
-            NSLayoutConstraint.activate([
-                categoryMoney.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 12),
-                noteMoney.topAnchor.constraint(equalTo: categoryMoney.bottomAnchor, constant: 4)
-            ])
-        }
-        
-//        setupConstraints()
+        noteMoney.isHidden = expense.note.isEmpty
     }
     
     func hideSeparator() {
@@ -277,5 +179,6 @@ final class ExpensesTableCell: UITableViewCell {
         noteMoney.text = nil
         labelMoneyCash.text = nil
         customSeparator.isHidden = false
+        noteMoney.isHidden = false
     }
 }
