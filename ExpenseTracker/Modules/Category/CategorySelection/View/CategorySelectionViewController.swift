@@ -206,13 +206,22 @@ final class CategorySelectionViewController: UIViewController {
         reloadCells()
     }
     
+    private func prepareForTransition() {
+        categoryTableViewButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        categoryTableViewButton.showSeparator()
+        categorySearchBar.text = ""
+        categorySearchBar.resignFirstResponder()
+    }
+    
     @objc
     private func showAddExpenseFlow() {
+        prepareForTransition()
         coordinator?.dismissCurrentFlow()
     }
 
     @objc
     private func showNewCategoryFlow() {
+        
         coordinator?.showNewCategoryFlow(with: self)
     }
     

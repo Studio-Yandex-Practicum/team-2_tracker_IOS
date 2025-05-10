@@ -8,9 +8,8 @@ final class ExpensesViewModel {
         return expenses.reduce(0) { $0 + $1.expense }
     }
     
-    func addExpense(expense: Expense) -> [Expense] {
+    func addExpense(expense: Expense) {
         expenses.append(expense)
-        return expenses
     }
     
     func removeExpense(_ expense: Expense) {
@@ -51,5 +50,9 @@ final class ExpensesViewModel {
         return expensesByDate
     }
     
-  
+    func updateExpense(_ updatedExpense: Expense) {
+        if let index = expenses.firstIndex(where: { $0.id == updatedExpense.id }) {
+            expenses[index] = updatedExpense
+        }
+    }
 }

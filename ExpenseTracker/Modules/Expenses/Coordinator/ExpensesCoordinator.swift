@@ -23,7 +23,7 @@ final class ExpensesCoordinator: Coordinator {
         navigationController.setViewControllers([expensesViewController], animated: true)
     }
     
-    func showAddExpenseFlow(with delegate: CreateExpenseDelegate) {
+    func showAddExpenseFlow(with delegate: ChangeExpensesDelegate) {
         let addExpenseViewController = ChangeExpensesViewController(.add)
         addExpenseViewController.coordinator = self
         addExpenseViewController.delegate = delegate
@@ -31,8 +31,8 @@ final class ExpensesCoordinator: Coordinator {
         navigationController.pushViewController(addExpenseViewController, animated: true)
     }
     
-    func showChangeExpenseFlow(with delegate: CreateExpenseDelegate) {
-        let addExpenseViewController = ChangeExpensesViewController(.change)
+    func showChangeExpenseFlow(with delegate: ChangeExpensesDelegate, expense: Expense) {
+        let addExpenseViewController = ChangeExpensesViewController(.change, expense: expense)
         addExpenseViewController.coordinator = self
         addExpenseViewController.delegate = delegate
         addExpenseViewController.hidesBottomBarWhenPushed = true

@@ -14,7 +14,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 //        } catch let signOutError as NSError {
 //            print("Ошибка при выходе: %@", signOutError)
 //        }
-        
+//        
         let isLoggedIn = Auth.auth().currentUser != nil // Проверка текущей сессии пользователя
         let window = UIWindow(windowScene: windowScene)
         self.window = window

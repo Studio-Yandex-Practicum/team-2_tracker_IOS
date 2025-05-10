@@ -1,7 +1,8 @@
 import UIKit
 
-protocol CreateExpenseDelegate: AnyObject {
+protocol ChangeExpensesDelegate: AnyObject {
     func createExpense(_ newExpense: Expense)
+    func updateExpense(_ updatedExpense: Expense)
 }
 
 enum NewCategory {
@@ -30,13 +31,14 @@ enum NewCategory {
 
 final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
        
-    weak var delegate: CreateExpenseDelegate?
+    weak var delegate: ChangeExpensesDelegate?
     weak var coordinator: ExpensesCoordinator?
     private var customNavigationBar: CustomBackBarItem?
     
     private let newCategory: NewCategory
     private var currentDate: Int?
     private var  newAddExpense = true
+    private var expenseToEdit: Expense?
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -123,8 +125,9 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         return saveButton
     }()
 
-    init(_ newCategory: NewCategory) {
+    init(_ newCategory: NewCategory, expense: Expense? = nil) {
         self.newCategory = newCategory
+        self.expenseToEdit = expense
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -145,6 +148,11 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         updatePlaceholderVisibility()
         setupNote()
         setupSaveCategoryButton()
+        
+        // Если есть расход для редактирования, заполняем поля
+        if let expense = expenseToEdit {
+            fillFields(with: expense)
+        }
     }
     
     private func setupGestures() {
@@ -336,10 +344,57 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         else { return }
         
         let decimalAmount = convertToDecimal(from: stringAmount)
-        let expense = Expense(id: UUID(), expense: decimalAmount, category: Category(id: UUID(), name: category, icon: Asset.Icon.cafe), date: datePicker.date, note: addNote.text)
-
-        delegate?.createExpense(expense)
+        
+        switch newCategory {
+        case .add:
+            let expense = Expense(id: UUID(), expense: decimalAmount, category: Category(id: UUID(), name: category, icon: Asset.Icon.cafe), date: datePicker.date, note: addNote.text)
+            delegate?.createExpense(expense)
+        case .change:
+            // При редактировании используем ID существующего расхода
+            if let existingExpense = expenseToEdit {
+                let updatedExpense = Expense(
+                    id: existingExpense.id,
+                    expense: decimalAmount,
+                    category: Category(id: existingExpense.category.id, name: category, icon: existingExpense.category.icon),
+                    date: datePicker.date,
+                    note: addNote.text
+                )
+                delegate?.updateExpense(updatedExpense)
+            }
+        }
         coordinator?.dismissCurrentFlow()
+    }
+    
+    private func fillFields(with expense: Expense) {
+        // Заполняем категорию
+        changeCategory.categoryLabel.text = expense.category.name
+        changeCategory.categoryImage.image = UIImage(named: expense.category.icon.rawValue)?.withTintColor(.etButtonLabel)
+        
+        // Заполняем сумму
+        let numberFormatter = NumberFormatter()
+        numberFormatter.numberStyle = .decimal
+        numberFormatter.minimumFractionDigits = 2
+        numberFormatter.maximumFractionDigits = 2
+        numberFormatter.groupingSeparator = " "
+        numberFormatter.decimalSeparator = ","
+        
+        if let formattedAmount = numberFormatter.string(from: NSDecimalNumber(decimal: expense.expense)) {
+            addMoney.text = formattedAmount
+        }
+        
+        // Заполняем дату
+        let dateString = dateFormatter.string(from: expense.date)
+        addDate.setLabel(dateString)
+        datePicker.date = expense.date
+        
+        // Заполняем заметку
+        if !expense.note.isEmpty {
+            addNote.text = expense.note
+            updatePlaceholderVisibility()
+        }
+        
+        // Активируем кнопку сохранения
+        updateButtonState()
     }
 }
 

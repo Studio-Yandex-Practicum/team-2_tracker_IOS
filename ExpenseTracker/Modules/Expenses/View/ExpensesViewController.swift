@@ -71,7 +71,7 @@ final class ExpensesViewController: UIViewController {
         return calendarStack
     }()
     
-    private let calendarButton: CalendarButton = {
+    private lazy var calendarButton: CalendarButton = {
         let calendarButton = CalendarButton(backgroundColor: .etBackground)
         calendarButton.addTarget(self, action: #selector(calendarButtonTapped), for: .touchUpInside)
         return calendarButton
@@ -358,7 +358,7 @@ final class ExpensesViewController: UIViewController {
     func setupLayout() {
         navigationController?.setNavigationBarHidden(true, animated: false)
         
-        var constraints = [
+        let constraints = [
             addCategoryButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             addCategoryButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
@@ -524,7 +524,6 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
                 cell.showSeparator()
             }
         }
-        
         return cell
     }
     
@@ -535,18 +534,16 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         
         let delete = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
-            
-            
             let alert = UIAlertController(title: "Уверены, что хотите удалить?", message: "", preferredStyle: .alert)
-            
             alert.addAction(UIAlertAction(title: "Выход", style: .cancel, handler: nil))
-//<<<<<<< HEAD
             alert.addAction(UIAlertAction(title: "ОК", style: .default) { [weak self] _ in
                 guard let self = self else { return }
                 
                 // Получаем расход для удаления
                 let dateKeys = Array(self.expensesByDate.keys).sorted(by: >)
-                if let expense = self.expensesByDate[dateKeys[indexPath.section]]?[indexPath.row] {
+                if let expenses = self.expensesByDate[dateKeys[indexPath.section]] {
+                    let sortedExpenses = expenses.sorted { $0.date > $1.date }
+                    let expense = sortedExpenses[indexPath.row]
                     // Удаляем расход из модели данных
                     self.viewModel.removeExpense(expense)
                     
@@ -567,14 +564,6 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
                         tableView.reloadData()
                     }
                 }
-//=======
-//            alert.addAction(UIAlertAction(title: "ОК", style: .default) { _ in
-//                
-//                tableView.deleteRows(at: [indexPath].reversed(), with: .automatic)
-//                tableView.reloadData()
-//                
-//                
-//>>>>>>> 74eb8003c8ef4c31c4cdf4d59f7449cda7f9cd62
             })
             self?.present(alert, animated: true)
             
@@ -583,15 +572,17 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         delete.image = UIImage(named: "delete")?.withTintColor(.etButtonLabel)
         delete.backgroundColor = UIColor.etbRed
         
-        let addExpense = UIContextualAction(style: .normal, title: nil) { _, _, completion in
+        let addExpense = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            guard let self = self else { return }
             
-            let changeVC = ChangeExpensesViewController(.change)
-            self.navigationController?.pushViewController(changeVC, animated: true)
-//<<<<<<< HEAD
-//=======
-//            self.navigationController?.setNavigationBarHidden(true, animated: .init())
-//            changeVC.navigationController?.isNavigationBarHidden = true
-//>>>>>>> 74eb8003c8ef4c31c4cdf4d59f7449cda7f9cd62
+            // Получаем расход для редактирования
+            let dateKeys = Array(self.expensesByDate.keys).sorted(by: >)
+            if let expenses = self.expensesByDate[dateKeys[indexPath.section]] {
+                let sortedExpenses = expenses.sorted { $0.date > $1.date }
+                let expense = sortedExpenses[indexPath.row]
+                coordinator?.showChangeExpenseFlow(with: self, expense: expense)
+            }
+            
             completion(true)
         }
         
@@ -692,15 +683,33 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
     }
 }
 
-extension ExpensesViewController: CreateCategoryDelegate {
-    func createcategory(_ newCategory: CategoryMain) {
-    }
-}
+//extension ExpensesViewController: CreateCategoryDelegate {
+//    
+//    func createcategory(_ newCategory: CategoryMain) {
+//    }
+//}
 
-
-extension ExpensesViewController: CreateExpenseDelegate {
+extension ExpensesViewController: ChangeExpensesDelegate {
+    
     func createExpense(_ newExpense: Expense) {
         viewModel.addExpense(expense: newExpense)
         loadExpenses(for: dayToday, periodType: nil)
+    }
+    
+    func updateExpense(_ updatedExpense: Expense) {
+        // Обновляем расход в модели данных
+        viewModel.updateExpense(updatedExpense)
+        
+        // Обновляем данные
+        expensesByDate = viewModel.getAllExpensesByDate()
+        
+        // Обновляем общую сумму
+        totalAmount = viewModel.totalAmount
+        
+        // Обновляем UI
+        updateMoneyLabel()
+        
+        // Обновляем таблицу
+        expenseMoneyTable.reloadData()
     }
 }

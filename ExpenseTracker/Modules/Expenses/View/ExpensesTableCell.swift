@@ -42,7 +42,7 @@ final class ExpensesTableCell: UITableViewCell {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.spacing = 0
-        stack.alignment = .leading
+        stack.alignment = .top
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }()
@@ -51,7 +51,7 @@ final class ExpensesTableCell: UITableViewCell {
         let label = UILabel()
         label.text = "Категория"
         label.textColor = .etPrimaryLabel
-        label.font = AppTextStyle.body.font
+        label.applyTextStyle(.body, textStyle: .body)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -60,7 +60,7 @@ final class ExpensesTableCell: UITableViewCell {
         let label = UILabel()
         label.text = "Очень очень очень очень длинное примечание"
         label.textColor = .etSecondaryLabel
-        label.font = AppTextStyle.caption.font
+        label.applyTextStyle(.caption, textStyle: .caption1)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -69,7 +69,7 @@ final class ExpensesTableCell: UITableViewCell {
         let label = UILabel()
         label.text = ""
         label.textColor = .etPrimaryLabel
-        label.font = AppTextStyle.body.font
+        label.applyTextStyle(.body, textStyle: .body)
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
@@ -89,14 +89,14 @@ final class ExpensesTableCell: UITableViewCell {
         setupUI()
     }
     
-    func addSubviews() {
-        expenceView.addSubview(expenceImage)
-        contentView.addSubview(backView)
-        backView.addSubview(expenceView)
-        //        backView.addSubview(categoryMoney)
-        //        backView.addSubview(noteMoney)
-        backView.addSubview(labelMoneyCash)
-    }
+//    func addSubviews() {
+//        expenceView.addSubview(expenceImage)
+//        contentView.addSubview(backView)
+//        backView.addSubview(expenceView)
+//        //        backView.addSubview(categoryMoney)
+//        //        backView.addSubview(noteMoney)
+//        backView.addSubview(labelMoneyCash)
+//    }
     
     func setupCell() {
         
@@ -118,7 +118,13 @@ final class ExpensesTableCell: UITableViewCell {
             expenceImage.centerXAnchor.constraint(equalTo: expenceView.centerXAnchor),
             
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
-            labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16) ]
+            labelMoneyCash.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -16),
+            
+            customSeparator.leadingAnchor.constraint(equalTo: backView.leadingAnchor),
+            customSeparator.trailingAnchor.constraint(equalTo: backView.trailingAnchor),
+            customSeparator.bottomAnchor.constraint(equalTo: backView.bottomAnchor),
+            customSeparator.heightAnchor.constraint(equalToConstant: 1)
+        ]
         
         if noteMoney.text != "" {
          //   print(noteMonewCell)
@@ -143,7 +149,8 @@ final class ExpensesTableCell: UITableViewCell {
             constraints += [
                 categoryMoney.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
                 categoryMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
-                categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68) ]
+                categoryMoney.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -68)
+            ]
         }
         
         NSLayoutConstraint.activate(constraints)
@@ -159,7 +166,7 @@ final class ExpensesTableCell: UITableViewCell {
 //        addSubviews()
         setupViews()
         setupCell()
-        setupConstraints()
+//        setupConstraints()
     }
     
     private func setupViews() {
@@ -199,9 +206,11 @@ final class ExpensesTableCell: UITableViewCell {
             expenceImage.heightAnchor.constraint(equalToConstant: 20),
             
             // LabelsStack constraints
-            labelsStack.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            labelsStack.topAnchor.constraint(equalTo: backView.topAnchor, constant: -10),
+        
             labelsStack.leadingAnchor.constraint(equalTo: expenceView.trailingAnchor, constant: 8),
             labelsStack.trailingAnchor.constraint(equalTo: labelMoneyCash.leadingAnchor, constant: -16),
+            labelsStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             
             // LabelMoneyCash constraints
             labelMoneyCash.centerYAnchor.constraint(equalTo: backView.centerYAnchor),
@@ -219,9 +228,14 @@ final class ExpensesTableCell: UITableViewCell {
     func configure(with expense: Expense) {
         expenceImage.image = UIImage(named: expense.category.icon.rawValue)?.withTintColor(.etButtonLabel)
         categoryMoney.text = expense.category.name
+        categoryMoney.applyTextStyle(.body, textStyle: .body)
+        
         let amount = expense.formattedAsRuble
         labelMoneyCash.text = amount
+        labelMoneyCash.applyTextStyle(.body, textStyle: .body)
+        
         noteMoney.text = expense.note
+        noteMoney.applyTextStyle(.caption, textStyle: .caption1)
         
         // Если нет описания, центрируем название категории
         if expense.note.isEmpty {
@@ -246,7 +260,7 @@ final class ExpensesTableCell: UITableViewCell {
             ])
         }
         
-        setupCell()
+//        setupConstraints()
     }
     
     func hideSeparator() {
