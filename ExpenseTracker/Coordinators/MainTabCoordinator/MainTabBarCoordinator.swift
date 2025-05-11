@@ -1,5 +1,9 @@
 import UIKit
 
+protocol MainTabBarCoordinatorDelegate: AnyObject {
+    func didRequestRestart()
+}
+
 // Главный координатор для управления таб-баром приложения
 final class MainTabBarCoordinator: Coordinator {
     
@@ -7,6 +11,7 @@ final class MainTabBarCoordinator: Coordinator {
     
     var childCoordinators: [Coordinator] = []
     var navigationController: UINavigationController
+    weak var delegate: MainTabBarCoordinatorDelegate?
     
     // MARK: - Private Properties
 
@@ -26,7 +31,7 @@ final class MainTabBarCoordinator: Coordinator {
         let coordinators: [TabCoordinator] = [
             ExpensesCoordinator(),     // Координатор для расходов
             AnalyticsCoordinator(),    // Координатор для аналитики
-            SettingsCoordinator()      // Координатор для настроек
+            SettingsCoordinator(delegate: self)      // Координатор для настроек
         ]
         
         coordinators.forEach { coordinator in
@@ -36,5 +41,12 @@ final class MainTabBarCoordinator: Coordinator {
         
         // Настраиваем таб-бар с созданными координаторами
         tabBarController.setupTabs(with: coordinators)
+    }
+}
+
+// Реализация протокола SettingsCoordinatorDelegate
+extension MainTabBarCoordinator: SettingsCoordinatorDelegate {
+    func didRequestLogout() {
+        delegate?.didRequestRestart()
     }
 }

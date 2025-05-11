@@ -1,13 +1,18 @@
 import UIKit
 
+protocol AppCoordinatorDelegate: AnyObject {
+    func didRequestRestart()
+}
+
 // Основной координатор приложения, управляющий потоками авторизации и основным интерфейсом
-final class AppCoordinator: Coordinator {
+final class AppCoordinator: Coordinator, MainTabBarCoordinatorDelegate {
     
     var childCoordinators: [Coordinator] = [] // Массив дочерних координаторов
     var navigationController: UINavigationController
     
     private let window: UIWindow
     private let isLoggedIn: Bool
+    weak var delegate: AppCoordinatorDelegate?
     
     init(window: UIWindow, isLoggedIn: Bool = false) {
         self.navigationController = UINavigationController()
@@ -33,18 +38,25 @@ final class AppCoordinator: Coordinator {
         
         // Создаем и запускаем координатор для основного потока
         let mainCoordinator = MainTabBarCoordinator(tabBarController: tabBarController)
+        mainCoordinator.delegate = self
         addChild(mainCoordinator)
         mainCoordinator.start()
     }
     
     // Показывает поток авторизации
     private func showAuthFlow() {
+        // Очищаем все дочерние координаторы
+        childCoordinators.removeAll()
+        
+        // Создаем новый навигационный контроллер
+        let newNavigationController = UINavigationController()
+        self.navigationController = newNavigationController
+        
         window.rootViewController = navigationController
         window.makeKeyAndVisible()
         
         let authCoordinator = AuthCoordinator(navigationController: navigationController)
         authCoordinator.delegate = self
-
         addChild(authCoordinator)
         authCoordinator.start()
     }
@@ -56,5 +68,16 @@ extension AppCoordinator: AuthCoordinatorDelegate {
     // Метод вызывается при успешной авторизации
     func didFinishAuth() {
         showMainFlow()
+    }
+}
+
+// Реализация протокола AppCoordinatorDelegate
+extension AppCoordinator: AppCoordinatorDelegate {
+    func didRequestRestart() {
+        // Очищаем все дочерние координаторы
+        childCoordinators.removeAll()
+        
+        // Показываем поток авторизации
+        start()
     }
 }

@@ -88,7 +88,18 @@ final class SettingsViewController: UIViewController {
     
     @objc
     private func logoutApp() {
-        coordinator?.exit()
+        let alert = UIAlertController(
+            title: "Выход из аккаунта",
+            message: "Вы действительно хотите выйти из аккаунта?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Выйти", style: .destructive) { [weak self] _ in
+            self?.coordinator?.exit()
+        })
+        
+        present(alert, animated: true)
     }
 }
 // MARK: - UITableViewDelegate & UITableViewDataSource

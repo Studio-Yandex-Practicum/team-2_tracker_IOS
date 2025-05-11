@@ -1,4 +1,9 @@
 import UIKit
+import FirebaseAuth
+
+protocol SettingsCoordinatorDelegate: AnyObject {
+    func didRequestLogout()
+}
 
 // Координатор для настроек
 final class SettingsCoordinator: Coordinator {
@@ -7,11 +12,13 @@ final class SettingsCoordinator: Coordinator {
     
     var childCoordinators: [Coordinator] = []
     var navigationController: UINavigationController
+    weak var delegate: SettingsCoordinatorDelegate?
     
     // MARK: - Initialization
     
-    init() {
+    init(delegate: SettingsCoordinatorDelegate) {
         self.navigationController = UINavigationController()
+        self.delegate = delegate
         configureTabBarItem()
     }
     
@@ -24,7 +31,12 @@ final class SettingsCoordinator: Coordinator {
     }
     
     func exit() {
-        
+        do {
+            try Auth.auth().signOut()
+        } catch {
+            print("Error signing out: \(error)")
+        }
+        delegate?.didRequestLogout()
     }
 }
 
