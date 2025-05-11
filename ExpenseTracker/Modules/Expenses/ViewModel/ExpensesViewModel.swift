@@ -52,9 +52,6 @@ final class ExpensesViewModel: NSObject {
     }
     
     func addExpense(expense: Decimal, category: CategoryMain, date: Date) {
-        print("Adding new expense for userID: \(Auth.auth().currentUser?.uid ?? "nil")")
-        print("Expense details - Amount: \(expense), Category: \(category.title), Date: \(date)")
-        
         // Ищем существующую категорию в базе
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@ AND userID == %@", 
@@ -65,17 +62,13 @@ final class ExpensesViewModel: NSObject {
         
         do {
             let existingCategories = try context.fetch(fetchRequest)
-            print("Found \(existingCategories.count) existing categories")
-            
             let categoryModel: CategoryModel
             
             if let existingCategory = existingCategories.first {
                 // Используем существующую категорию
-                print("Using existing category: \(existingCategory.name ?? "unknown")")
                 categoryModel = existingCategory
             } else {
                 // Если категория не найдена, создаем новую
-                print("Creating new category: \(category.title)")
                 categoryModel = CategoryModel(context: context)
                 categoryModel.id = UUID()
                 categoryModel.name = category.title
@@ -89,7 +82,6 @@ final class ExpensesViewModel: NSObject {
                 note: "",
                 category: categoryModel
             )
-            print("Expense created successfully")
             NotificationCenter.default.post(name: .expensesDidChange, object: nil)
         } catch {
             print("Error creating expense: \(error)")
@@ -102,14 +94,8 @@ final class ExpensesViewModel: NSObject {
             onError?(NSError(domain: "ExpenseError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Expense not found"]))
             return
         }
-        
-        do {
-            expenseService.deleteExpense(expenseModel)
-            NotificationCenter.default.post(name: .expensesDidChange, object: nil)
-        } catch {
-            print("Error deleting expense: \(error)")
-            onError?(error)
-        }
+        expenseService.deleteExpense(expenseModel)
+        NotificationCenter.default.post(name: .expensesDidChange, object: nil)
     }
     
     func getAllExpenses() -> [ExpenseModel] {

@@ -160,20 +160,16 @@ final class NewCategoryViewController: UIViewController {
     }
     
     private func updateExistingCategory(_ newCategory: CategoryMain, oldCategory: CategoryMain) {
-        print("Updating existing category from \(oldCategory.title) to \(newCategory.title)")
         
         // Проверяем, изменилось ли что-то
         if newCategory.title == oldCategory.title && newCategory.icon == oldCategory.icon {
-            print("No changes detected, dismissing")
             // Ничего не изменилось, просто закрываем экран
             coordinator?.dismissCurrentFlow()
             return
         }
         
         do {
-            print("Attempting to update category in database")
             try categoryService.updateCategory(newCategory, oldName: oldCategory.title, oldIcon: oldCategory.icon.rawValue)
-            print("Category updated successfully, notifying delegate")
             delegate?.createcategory(newCategory)
             coordinator?.dismissCurrentFlow()
         } catch {
@@ -190,12 +186,8 @@ final class NewCategoryViewController: UIViewController {
     }
     
     private func createNewCategory(_ category: CategoryMain) {
-        print("Creating new category with name: \(category.title) and icon: \(category.icon.rawValue)")
-        
         do {
-            print("Attempting to create category in database")
             try categoryService.createCategory(category)
-            print("Category created successfully, notifying delegate")
             // Сначала закрываем экран, потом уведомляем делегата
             coordinator?.dismissCurrentFlow()
             delegate?.createcategory(category)

@@ -20,7 +20,6 @@ final class ExpenseService {
         
         do {
             try context.save()
-            print("Expense saved successfully with userID: \(expense.userID ?? "nil")")
         } catch {
             print("Error saving expense: \(error)")
             context.rollback()
@@ -30,7 +29,6 @@ final class ExpenseService {
     func updateExpense(_ expense: ExpenseModel) {
         do {
             try context.save()
-            print("Expense updated successfully with userID: \(expense.userID ?? "nil")")
         } catch {
             print("Error updating expense: \(error)")
             context.rollback()
@@ -41,7 +39,6 @@ final class ExpenseService {
         context.delete(expense)
         do {
             try context.save()
-            print("Expense deleted successfully")
         } catch {
             print("Error deleting expense: \(error)")
             context.rollback()
@@ -58,7 +55,6 @@ final class ExpenseService {
         
         do {
             let expenses = try context.fetch(fetchRequest)
-            print("Fetched \(expenses.count) expenses for userID: \(Auth.auth().currentUser?.uid ?? "nil")")
             return expenses
         } catch {
             print("Error fetching expenses: \(error)")

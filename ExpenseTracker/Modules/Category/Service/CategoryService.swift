@@ -28,8 +28,6 @@ final class CategoryService {
     }
     
     func createCategory(_ category: CategoryMain) throws {
-        print("Attempting to create category with name: \(category.title) and icon: \(category.icon.rawValue)")
-        
         // Проверяем, существует ли уже категория с таким именем для текущего пользователя
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "name == %@ AND userID == %@", 
@@ -39,14 +37,11 @@ final class CategoryService {
         
         do {
             let existingCategories = try context.fetch(fetchRequest)
-            print("Found \(existingCategories.count) existing categories with name: \(category.title)")
-            
+
             if !existingCategories.isEmpty {
-                print("Category already exists")
                 throw NSError(domain: "CategoryError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Категория с таким названием уже существует"])
             }
             
-            print("Creating new category")
             // Создаем новую категорию
             let categoryModel = CategoryModel(context: context)
             categoryModel.id = UUID()
@@ -55,7 +50,6 @@ final class CategoryService {
             categoryModel.userID = Auth.auth().currentUser?.uid
             
             try context.save()
-            print("Category created successfully")
         } catch {
             print("Error creating category: \(error)")
             throw error
@@ -72,7 +66,6 @@ final class CategoryService {
         
         do {
             let categories = try context.fetch(fetchRequest)
-            print("Fetched \(categories.count) categories for userID: \(Auth.auth().currentUser?.uid ?? "nil")")
             return categories
         } catch {
             print("Error fetching categories: \(error)")
@@ -81,8 +74,6 @@ final class CategoryService {
     }
     
     func updateCategory(_ category: CategoryMain, oldName: String, oldIcon: String) throws {
-        print("Attempting to update category from \(oldName) to \(category.title)")
-        
         // Сначала проверяем, существует ли категория с новым именем для текущего пользователя
         let checkFetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
         checkFetchRequest.predicate = NSPredicate(format: "name == %@ AND userID == %@", 
@@ -92,10 +83,8 @@ final class CategoryService {
         
         do {
             let existingWithNewName = try context.fetch(checkFetchRequest)
-            print("Found \(existingWithNewName.count) categories with new name: \(category.title)")
             
             if !existingWithNewName.isEmpty && existingWithNewName.first?.name != oldName {
-                print("Category with new name already exists")
                 throw NSError(domain: "CategoryError", code: 2, userInfo: [NSLocalizedDescriptionKey: "Категория с таким названием уже существует"])
             }
             
@@ -107,14 +96,11 @@ final class CategoryService {
             )
             
             let existingCategories = try context.fetch(fetchRequest)
-            print("Found \(existingCategories.count) categories with old name: \(oldName)")
-            
+        
             guard let existingCategory = existingCategories.first else {
-                print("Category to update not found")
                 throw NSError(domain: "CategoryError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Категория не найдена"])
             }
             
-            print("Updating category")
             // Обновляем существующую категорию
             existingCategory.name = category.title
             existingCategory.icon = category.icon.rawValue
@@ -127,14 +113,10 @@ final class CategoryService {
             expenseFetchRequest.predicate = NSPredicate(format: "category == %@", existingCategory)
             
             let expenses = try context.fetch(expenseFetchRequest)
-            print("Updating \(expenses.count) related expenses")
-            
             for expense in expenses {
                 expense.category = existingCategory
             }
-            
             try context.save()
-            print("Category updated successfully")
             
             // Отправляем уведомление об изменении категорий
             NotificationCenter.default.post(name: .categoriesDidChange, object: nil)

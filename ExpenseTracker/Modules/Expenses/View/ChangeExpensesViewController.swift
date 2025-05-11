@@ -365,7 +365,6 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
                     date: datePicker.date,
                     note: addNote.text
                 )
-               print(updatedExpense.note)
                 delegate?.updateExpense(updatedExpense)
             }
         }
