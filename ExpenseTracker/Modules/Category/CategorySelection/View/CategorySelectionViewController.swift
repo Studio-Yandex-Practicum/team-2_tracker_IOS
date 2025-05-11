@@ -1,4 +1,5 @@
 import UIKit
+import CoreData
 
 protocol CategorySelectionDelegate: AnyObject {
     func didSelectCategories(_ categories: Set<String>)
@@ -18,7 +19,8 @@ final class CategorySelectionViewController: UIViewController {
     
     private var isSelectionFlow: Bool
     private var customNavigationBar: CustomBackBarItem?
-    private var categories: [CategoryMain] = CategoryProvider.baseCategories
+    private var categories: [CategoryMain] = []
+    private let categoryService: CategoryService
     private var isAllCategoriesSelected: Bool = false
     private var selectedIndexPath: IndexPath?
     private var filteredCategories: [CategoryMain] = []
@@ -73,8 +75,9 @@ final class CategorySelectionViewController: UIViewController {
     
     // MARK: - Init
     
-    init(isSelectionFlow: Bool) {
+    init(isSelectionFlow: Bool, context: NSManagedObjectContext) {
         self.isSelectionFlow = isSelectionFlow
+        self.categoryService = CategoryService(context: context)
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -86,14 +89,19 @@ final class CategorySelectionViewController: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        scrollToTopOfTableView()
+        if !filteredCategories.isEmpty {
+            scrollToTopOfTableView()
+        }
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        loadCategories()
         filteredCategories = categories
         setupSetButton()
+        setupCategoryTableViewButton()
+        categoryTableViewController.reloadData()
     }
     
     // MARK: - Private Methods
@@ -105,7 +113,6 @@ final class CategorySelectionViewController: UIViewController {
         setupNavBar()
         setupCategorySearchBar()
         setupViews()
-        setupCategoryTableViewButton()
         setupTapGesture()
     }
 
@@ -164,6 +171,7 @@ final class CategorySelectionViewController: UIViewController {
     }
     
     private func scrollToTopOfTableView() {
+        guard !filteredCategories.isEmpty else { return }
         let indexPath = IndexPath(row: 0, section: 0)
         categoryTableViewController.scrollToRow(at: indexPath, at: .top, animated: false)
     }
@@ -227,8 +235,11 @@ final class CategorySelectionViewController: UIViewController {
     
     @objc
     private func setButtonTapped() {
-        delegateExpence?.didSelectCategoryForExpense(categoryForExpense)
-        delegate?.didSelectCategories(selectedCategories)
+        if isSelectionFlow {
+            delegateExpence?.didSelectCategoryForExpense(categoryForExpense)
+        } else {
+            delegate?.didSelectCategories(selectedCategories)
+        }
         coordinator?.dismissCurrentFlow()
     }
     
@@ -237,6 +248,16 @@ final class CategorySelectionViewController: UIViewController {
         setupCheckBox()
         deselectAllCells()
         updateSetButtonState()
+    }
+    
+    private func loadCategories() {
+        let categoryModels = categoryService.fetchAllCategories()
+        categories = categoryModels.map { model in
+            CategoryMain(
+                title: model.name ?? "",
+                icon: Asset.Icon(rawValue: model.icon ?? "") ?? .other
+            )
+        }
     }
 }
 
@@ -352,8 +373,13 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
 
 extension CategorySelectionViewController: CreateCategoryDelegate {
     func createcategory(_ newCategory: CategoryMain) {
-        categories.append(newCategory)
-        filteredCategories = categories
-        categoryTableViewController.reloadData()
+        do {
+            try categoryService.createCategory(newCategory)
+            categories.append(newCategory)
+            filteredCategories = categories
+            categoryTableViewController.reloadData()
+        } catch {
+            print("Error creating category: \(error)")
+        }
     }
 }

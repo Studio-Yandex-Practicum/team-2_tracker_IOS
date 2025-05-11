@@ -8,6 +8,7 @@ final class AnalyticsViewController: UIViewController {
     weak var coordinator: AnalyticsCoordinator?
     private let viewModel: AnalyticsViewModel
     private let expensesViewModel: ExpensesViewModel
+    private var dayToday: Date = Date()
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -142,7 +143,25 @@ final class AnalyticsViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupBindings()
-        loadInitialData()
+        setupObservers()
+        loadExpenses(for: dayToday, periodType: nil)
+    }
+    
+    private func setupObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(expensesDidChange),
+            name: .expensesDidChange,
+            object: nil
+        )
+    }
+    
+    @objc private func expensesDidChange() {
+        loadExpenses(for: dayToday, periodType: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     // MARK: - Setup
@@ -171,9 +190,27 @@ final class AnalyticsViewController: UIViewController {
         }
     }
     
-    private func loadInitialData() {
+    private func loadExpenses(for date: Date, periodType: PeriodType?) {
         // Получаем данные из ExpensesViewController
-        let expensesByDate = expensesViewModel.getAllExpensesByDate()
+        let expensesByDateModel = expensesViewModel.getAllExpensesByDate()
+        
+        // Преобразуем ExpenseModel в Expense
+        let expensesByDate: [Date: [Expense]] = expensesByDateModel.mapValues { expenses in
+            expenses.map { model in
+                Expense(
+                    id: model.id ?? UUID(),
+                    expense: model.amount?.decimalValue ?? 0,
+                    category: Category(
+                        id: model.category?.id ?? UUID(),
+                        name: model.category?.name ?? "",
+                        icon: Asset.Icon(rawValue: model.category?.icon ?? "") ?? .customCat
+                    ),
+                    date: model.date ?? Date(),
+                    note: model.note ?? ""
+                )
+            }
+        }
+        
         viewModel.updateExpensesByDate(expensesByDate)
         
         // Обновляем UI

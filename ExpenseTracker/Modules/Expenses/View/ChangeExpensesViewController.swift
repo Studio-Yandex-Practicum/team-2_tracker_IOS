@@ -37,8 +37,9 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     private let newCategory: NewCategory
     private var currentDate: Int?
-    private var  newAddExpense = true
+    private var newAddExpense = true
     private var expenseToEdit: Expense?
+    private var selectedCategory: CategoryMain?
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -285,13 +286,15 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         updateButtonState()
     }
     
-    @objc private func addComma() {
+    @objc
+    private func addComma() {
         if let text = addMoney.text, !text.contains(",") {
             addMoney.text = text + ","
         }
     }
     
-    @objc private func doneButtonTapped() {
+    @objc
+    private func doneButtonTapped() {
         addMoney.resignFirstResponder()
     }
         
@@ -347,15 +350,19 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         
         switch newCategory {
         case .add:
-            let expense = Expense(id: UUID(), expense: decimalAmount, category: Category(id: UUID(), name: category, icon: Asset.Icon.cafe), date: datePicker.date, note: addNote.text)
+            let expense = Expense(id: UUID(), expense: decimalAmount, category: Category(id: UUID(), name: category, icon: selectedCategory?.icon ?? .customCat), date: datePicker.date, note: addNote.text)
             delegate?.createExpense(expense)
         case .change:
             // При редактировании используем ID существующего расхода
-            if let existingExpense = expenseToEdit {
+            if
+                let existingExpense = expenseToEdit,
+                let selectedCategory = selectedCategory,
+                let amountChanged = addMoney.text
+            {
                 let updatedExpense = Expense(
                     id: existingExpense.id,
-                    expense: decimalAmount,
-                    category: Category(id: existingExpense.category.id, name: category, icon: existingExpense.category.icon),
+                    expense: convertToDecimal(from: amountChanged),
+                    category: Category(id: existingExpense.category.id, name: category, icon: selectedCategory.icon),
                     date: datePicker.date,
                     note: addNote.text
                 )
@@ -422,6 +429,7 @@ extension ChangeExpensesViewController: CategoryForExpenseDelegate {
     func didSelectCategoryForExpense(_ categories: CategoryMain) {
         newAddExpense = false
         setupLayout()
+        selectedCategory = categories
         changeCategory.categoryLabel.text = categories.title
         changeCategory.categoryImage.image = UIImage(named: categories.icon.rawValue)?.withTintColor(.etButtonLabel)
         updateButtonState()

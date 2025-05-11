@@ -40,7 +40,7 @@ final class ExpensesCoordinator: Coordinator {
     }
     
     func showCategorySelectionOneFlow(with delegateExpence: CategoryForExpenseDelegate) {
-        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: true)
+        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: true, context: CoreDataStackManager.shared.context)
         categorySelectionController.coordinator = self
         categorySelectionController.delegateExpence = delegateExpence
         categorySelectionController.hidesBottomBarWhenPushed = true
@@ -48,14 +48,14 @@ final class ExpensesCoordinator: Coordinator {
     }
     
     func showCategorySelectionFlow() {
-        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: true)
+        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: true, context: CoreDataStackManager.shared.context)
         categorySelectionController.coordinator = self
         categorySelectionController.hidesBottomBarWhenPushed = true
         navigationController.pushViewController(categorySelectionController, animated: true)
     }
         
     func showCategoryFiltersFlow() {
-        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: false)
+        let categorySelectionController = CategorySelectionViewController(isSelectionFlow: false, context: CoreDataStackManager.shared.context)
         categorySelectionController.coordinator = self
         categorySelectionController.delegate = navigationController.viewControllers.last as? CategorySelectionDelegate
         categorySelectionController.hidesBottomBarWhenPushed = true

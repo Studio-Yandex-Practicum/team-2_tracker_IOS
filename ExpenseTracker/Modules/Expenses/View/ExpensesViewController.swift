@@ -1,18 +1,21 @@
 import UIKit
+import CoreData
 
 final class ExpensesViewController: UIViewController {
     
     weak var coordinator: ExpensesCoordinator?
     
-    var viewModel = ExpensesViewModel()
-    var totalAmount: Decimal = 12345
-    var currency = Currency.ruble.rawValue
-    var dayToday = Date(timeIntervalSinceNow: 0)
+    private var viewModel: ExpensesViewModel
+    private var totalAmount: Decimal = 0
+    private var currency = Currency.ruble.rawValue
+    private var dayToday = Date(timeIntervalSinceNow: 0)
     
-    private var expensesByDate: [Date: [Expense]] = [:]
+    private var expensesByDate: [Date: [ExpenseModel]] = [:]
     private var selectedCategories: Set<String>?
     private var selectedDateRange: (start: Date, end: Date)?
     private var tempDateRange: (start: Date, end: Date)?
+    
+    private var selectedCategory: CategoryMain?
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -128,13 +131,43 @@ final class ExpensesViewController: UIViewController {
         return addExpensesLabel
     }()
     
+    // MARK: - Initialization
+    
+    init() {
+        let context = CoreDataStackManager.shared.context
+        self.viewModel = ExpensesViewModel(context: context)
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .etBackground
         
+        // Настраиваем обработчики изменений
+        viewModel.onExpensesDidChange = { [weak self] in
+            self?.updateUI()
+        }
+        
+        viewModel.onError = { [weak self] error in
+            // Показываем ошибку пользователю
+            let alert = UIAlertController(
+                title: "Ошибка",
+                message: error.localizedDescription,
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            self?.present(alert, animated: true)
+        }
+        
         self.expenseMoneyTable.register(ExpensesTableCell.self, forCellReuseIdentifier: "ExpensesTableCell")
         addSubviews()
         setupLayout()
+        
+        // Загружаем расходы
         loadExpenses(for: dayToday, periodType: nil)
         
         // Проверяем наличие расходов и показываем соответствующее состояние
@@ -143,6 +176,20 @@ final class ExpensesViewController: UIViewController {
         } else {
             showTableState()
         }
+    }
+    
+    private func updateUI() {
+        expensesByDate = viewModel.getAllExpensesByDate()
+        totalAmount = viewModel.totalAmount
+        updateMoneyLabel()
+        
+        if expensesByDate.isEmpty {
+            showEmptyState()
+        } else {
+            showTableState()
+        }
+        
+        expenseMoneyTable.reloadData()
     }
     
     private func setupFilterButtonState(for button: UIButton, with period: PeriodType) {
@@ -207,7 +254,7 @@ final class ExpensesViewController: UIViewController {
     }
     
     private func filterExpenses() {
-        var filteredExpenses: [Expense]
+        var filteredExpenses: [ExpenseModel]
         
         // Получаем расходы в зависимости от выбранного периода
         if let dateRange = selectedDateRange {
@@ -233,17 +280,25 @@ final class ExpensesViewController: UIViewController {
         // Фильтрация по категориям
         if let selectedCategories = selectedCategories, !selectedCategories.isEmpty {
             filteredExpenses = filteredExpenses.filter { expense in
-                selectedCategories.contains(expense.category.name)
+                guard
+                    let expenseCategory = expense.category,
+                    let categoryName = expenseCategory.name
+                else { return false }
+                return selectedCategories.contains(categoryName)
+                 
             }
         }
         
         // Группируем расходы по датам
         expensesByDate = Dictionary(grouping: filteredExpenses) { expense in
-            Calendar.current.startOfDay(for: expense.date)
+            if let date = expense.date {
+                return Calendar.current.startOfDay(for: date)
+            }
+            return Date()
         }
         
         // Обновляем общую сумму
-        totalAmount = filteredExpenses.reduce(0, { $0 + $1.expense })
+        totalAmount = filteredExpenses.reduce(0, { $0 + ($1.amount?.decimalValue ?? 0) })
         
         let numberFormatter = NumberFormatter()
         numberFormatter.numberStyle = .decimal
@@ -392,7 +447,7 @@ final class ExpensesViewController: UIViewController {
             
             // Подсчитываем общую сумму для выбранного периода
             let allExpenses = expensesByDate.values.flatMap { $0 }
-            totalAmount = allExpenses.reduce(0) { $0 + $1.expense }
+            totalAmount = allExpenses.reduce(0) { $0 + ($1.amount?.decimalValue ?? 0) }
             
             let numberFormatter = NumberFormatter()
             numberFormatter.numberStyle = .decimal
@@ -419,7 +474,7 @@ final class ExpensesViewController: UIViewController {
             
             // Подсчитываем общую сумму для всех расходов
             let allExpenses = expensesByDate.values.flatMap { $0 }
-            totalAmount = allExpenses.reduce(0) { $0 + $1.expense }
+            totalAmount = allExpenses.reduce(0) { $0 + ($1.amount?.decimalValue ?? 0) }
             
             let numberFormatter = NumberFormatter()
             numberFormatter.numberStyle = .decimal
@@ -504,7 +559,6 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = expenseMoneyTable.dequeueReusableCell(withIdentifier: "ExpensesTableCell", for: indexPath) as? ExpensesTableCell else {
-            print("Failed to dequeue a cell of type ExpensesTableCell")
             return UITableViewCell()
         }
         
@@ -512,12 +566,20 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
         let dateKey = dateKeys.sorted(by: >)
         
         if let expenses = expensesByDate[dateKey[indexPath.section]] {
-            // Сортируем расходы внутри секции по времени создания (новые сверху)
-            let sortedExpenses = expenses.sorted { $0.date > $1.date }
+            let sortedExpenses = expenses.sorted { ($0.date ?? Date()) > ($1.date ?? Date()) }
             let expense = sortedExpenses[indexPath.row]
-            cell.configure(with: expense)
             
-            // Скрываем сепаратор для последней ячейки в секции
+            // Конвертируем ExpenseModel в Expense для ячейки
+            let expenseForCell = Expense(
+                id: expense.id ?? UUID(),
+                expense: expense.amount?.decimalValue ?? 0,
+                category: Category(id: expense.category?.id ?? UUID(), name: expense.category?.name ?? "", icon: Asset.Icon(rawValue: expense.category?.icon ?? "") ?? .customCat),
+                date: expense.date ?? Date(),
+                note: expense.note ?? ""
+            )
+            
+            cell.configure(with: expenseForCell)
+            
             if indexPath.row == tableView.numberOfRows(inSection: indexPath.section) - 1 {
                 cell.hideSeparator()
             } else {
@@ -533,38 +595,65 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         
-        let delete = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+        let delete = UIContextualAction(style: .normal, title: nil) {
+            [weak self] _,
+            _,
+            completion in
             let alert = UIAlertController(title: "Уверены, что хотите удалить?", message: "", preferredStyle: .alert)
             alert.addAction(UIAlertAction(title: "Выход", style: .cancel, handler: nil))
-            alert.addAction(UIAlertAction(title: "ОК", style: .default) { [weak self] _ in
-                guard let self = self else { return }
-                
-                // Получаем расход для удаления
-                let dateKeys = Array(self.expensesByDate.keys).sorted(by: >)
-                if let expenses = self.expensesByDate[dateKeys[indexPath.section]] {
-                    let sortedExpenses = expenses.sorted { $0.date > $1.date }
-                    let expense = sortedExpenses[indexPath.row]
-                    // Удаляем расход из модели данных
-                    self.viewModel.removeExpense(expense)
+            alert.addAction(
+                UIAlertAction(title: "ОК", style: .default) { [weak self] _ in
+                    guard let self = self else { return }
                     
-                    // Обновляем данные
-                    self.expensesByDate = self.viewModel.getAllExpensesByDate()
-                    
-                    // Обновляем общую сумму
-                    self.totalAmount = self.viewModel.totalAmount
-                    
-                    // Обновляем UI
-                    self.updateMoneyLabel()
-                    
-                    // Проверяем, нужно ли показать пустое состояние
-                    if self.expensesByDate.isEmpty {
-                        self.showEmptyState()
-                    } else {
-                        // Обновляем таблицу
-                        tableView.reloadData()
+                    // Получаем расход для удаления
+                    let dateKeys = Array(self.expensesByDate.keys).sorted(by: >)
+                    if let expenses = self.expensesByDate[dateKeys[indexPath.section]] {
+                        let sortedExpenses = expenses.sorted {
+                            if let firstDate = $0.date as Date?,
+                               let secondDate = $1.date as Date? {
+                                return firstDate > secondDate
+                            }
+                            return false
+                        }
+                        
+                        let expense = sortedExpenses[indexPath.row]
+                        // Удаляем расход из модели данных
+                        
+                        let categoryModel = Category(
+                            id: expense.category?.id ?? UUID(),
+                            name: expense.category?.name ?? "",
+                            icon: Asset.Icon(
+                                rawValue: expense.category?.icon ?? ""
+                            ) ?? .customCat
+                        )
+                        
+                        let expenseModel = Expense(
+                            id: expense.id ?? UUID(),
+                            expense: expense.amount?.decimalValue ?? 0,
+                            category: categoryModel,
+                            date: expense.date ?? Date(),
+                            note: expense.note ?? ""
+                        )
+                        self.viewModel.removeExpense(expenseModel)
+                        
+                        // Обновляем данные
+                        self.expensesByDate = self.viewModel.getAllExpensesByDate()
+                        
+                        // Обновляем общую сумму
+                        self.totalAmount = self.viewModel.totalAmount
+                        
+                        // Обновляем UI
+                        self.updateMoneyLabel()
+                        
+                        // Проверяем, нужно ли показать пустое состояние
+                        if self.expensesByDate.isEmpty {
+                            self.showEmptyState()
+                        } else {
+                            // Обновляем таблицу
+                            tableView.reloadData()
+                        }
                     }
-                }
-            })
+                })
             self?.present(alert, animated: true)
             
             completion(true)
@@ -578,11 +667,32 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
             // Получаем расход для редактирования
             let dateKeys = Array(self.expensesByDate.keys).sorted(by: >)
             if let expenses = self.expensesByDate[dateKeys[indexPath.section]] {
-                let sortedExpenses = expenses.sorted { $0.date > $1.date }
+                let sortedExpenses = expenses.sorted {
+                    if let firstDate = $0.date as Date?,
+                       let secondDate = $1.date as Date? {
+                        return firstDate > secondDate
+                    }
+                    return false
+                }
                 let expense = sortedExpenses[indexPath.row]
-                coordinator?.showChangeExpenseFlow(with: self, expense: expense)
+                
+                let categoryModel = Category(
+                    id: expense.category?.id ?? UUID(),
+                    name: expense.category?.name ?? "",
+                    icon: Asset.Icon(
+                        rawValue: expense.category?.icon ?? ""
+                    ) ?? .customCat
+                )
+                
+                let expenseModel = Expense(
+                    id: expense.id ?? UUID(),
+                    expense: expense.amount?.decimalValue ?? 0,
+                    category: categoryModel,
+                    date: expense.date ?? Date(),
+                    note: expense.note ?? ""
+                )
+                coordinator?.showChangeExpenseFlow(with: self, expense: expenseModel)
             }
-            
             completion(true)
         }
         
@@ -644,16 +754,6 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
     }
 }
 
-// MARK: - CategorySelectionDelegate
-
-extension ExpensesViewController: CategorySelectionDelegate {
-    
-    func didSelectCategories(_ categories: Set<String>) {
-        selectedCategories = categories
-        filterExpenses()
-    }
-}
-
 // MARK: - DateRangeCalendarViewDelegate
 
 extension ExpensesViewController: DateRangeCalendarViewDelegate {
@@ -676,23 +776,21 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
             filterExpenses()
         }
     }
-    
+
     @objc
     private func calendarButtonTapped() {
         DateRangeCalendarView.show(in: self, delegate: self)
     }
 }
 
-//extension ExpensesViewController: CreateCategoryDelegate {
-//    
-//    func createcategory(_ newCategory: CategoryMain) {
-//    }
-//}
-
 extension ExpensesViewController: ChangeExpensesDelegate {
     
     func createExpense(_ newExpense: Expense) {
-        viewModel.addExpense(expense: newExpense)
+        viewModel.addExpense(
+            expense: newExpense.expense,
+            category: CategoryMain(title: newExpense.category.name, icon: newExpense.category.icon),
+            date: newExpense.date
+        )
         loadExpenses(for: dayToday, periodType: nil)
     }
     
@@ -711,5 +809,19 @@ extension ExpensesViewController: ChangeExpensesDelegate {
         
         // Обновляем таблицу
         expenseMoneyTable.reloadData()
+    }
+}
+
+extension ExpensesViewController: CategorySelectionDelegate {
+    
+    func didSelectCategories(_ categories: Set<String>) {
+        selectedCategories = categories
+        filterExpenses()
+    }
+    
+    func didSelectCategoryForExpense(_ categories: CategoryMain) {
+        selectedCategory = categories
+        categoryButton.setTitle(categories.title, for: .normal)
+        categoryButton.setImage(UIImage(named: categories.icon.rawValue), for: .normal)
     }
 }

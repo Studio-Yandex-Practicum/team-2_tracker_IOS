@@ -6,6 +6,9 @@ import FirebaseAuth
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        // Инициализируем базовые категории
+        _ = CategoryService(context: CoreDataStackManager.shared.context)
+        
         FirebaseApp.configure() // Настройка для Firebase
         return true
     }
