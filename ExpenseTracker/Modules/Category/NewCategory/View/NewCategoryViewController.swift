@@ -13,6 +13,26 @@ final class NewCategoryViewController: UIViewController {
     private let icons: [String] = (0...12).map { String($0) }
     private var selectedIndexPath: IndexPath?
     private var customNavigationBar: CustomBackBarItem?
+    private let categoryService: CategoryService
+    
+    var categoryToEdit: CategoryMain?
+    private var selectedIcon: Asset.Icon?
+    
+    init() {
+        self.categoryService = CategoryService(context: CoreDataStackManager.shared.context)
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private lazy var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
 
     private let newCategoryStackView: UIStackView = {
         let stackView = UIStackView()
@@ -53,7 +73,19 @@ final class NewCategoryViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupNavBar()
+        setupNewCategoryStackView()
+        setupSaveButton()
         setupSaveCategoryButton()
+        
+        if let categoryToEdit = categoryToEdit {
+            // Заполняем поля данными редактируемой категории
+            newCategoryTextField.text = categoryToEdit.title
+            selectedIcon = categoryToEdit.icon
+            selectedIndexPath = IndexPath(item: icons.firstIndex(of: categoryToEdit.icon.rawValue) ?? 0, section: 0)
+            newCategoryView = categoryToEdit.icon.rawValue
+            updateSaveButton()
+        }
     }
 
     private func setupUI() {
@@ -61,7 +93,7 @@ final class NewCategoryViewController: UIViewController {
         setupNavBar()
         setupNewCategoryStackView()
         setupSaveButton()
-        setupTapGesture()
+        setupSaveCategoryButton()
     }
 
     private func setupNavBar() {
@@ -92,7 +124,7 @@ final class NewCategoryViewController: UIViewController {
     }
     
     private func setupSaveCategoryButton() {
-        saveButton.addTarget(self, action: #selector(saveNewCategory), for: .touchUpInside)
+        saveButton.addTarget(self, action: #selector(saveCategory), for: .touchUpInside)
     }
     
     func updateSaveButton() {
@@ -112,17 +144,72 @@ final class NewCategoryViewController: UIViewController {
     }
     
     @objc
-    private func saveNewCategory() {
-        guard
-            let categoryName = newCategoryTextField.text,
-            let categoryIcon = Asset.Icon(rawValue: newCategoryView)
-        else { return }
+    private func saveCategory() {
+        guard let categoryName = newCategoryTextField.text, !categoryName.isEmpty,
+              let selectedIcon = selectedIcon else {
+            return
+        }
         
-        let categoryNameWithoutSpaces = categoryName.replacingOccurrences(of: " ", with: "")
-        let newCategory = CategoryMain(title: categoryNameWithoutSpaces, icon: categoryIcon)
+        let category = CategoryMain(title: categoryName, icon: selectedIcon)
         
-        delegate?.createcategory(newCategory)
-        coordinator?.dismissCurrentFlow()
+        if let categoryToEdit = categoryToEdit {
+            updateExistingCategory(category, oldCategory: categoryToEdit)
+        } else {
+            createNewCategory(category)
+        }
+    }
+    
+    private func updateExistingCategory(_ newCategory: CategoryMain, oldCategory: CategoryMain) {
+        print("Updating existing category from \(oldCategory.title) to \(newCategory.title)")
+        
+        // Проверяем, изменилось ли что-то
+        if newCategory.title == oldCategory.title && newCategory.icon == oldCategory.icon {
+            print("No changes detected, dismissing")
+            // Ничего не изменилось, просто закрываем экран
+            coordinator?.dismissCurrentFlow()
+            return
+        }
+        
+        do {
+            print("Attempting to update category in database")
+            try categoryService.updateCategory(newCategory, oldName: oldCategory.title, oldIcon: oldCategory.icon.rawValue)
+            print("Category updated successfully, notifying delegate")
+            delegate?.createcategory(newCategory)
+            coordinator?.dismissCurrentFlow()
+        } catch {
+            print("Error updating category: \(error)")
+            // Показываем ошибку пользователю
+            let alert = UIAlertController(
+                title: "Ошибка",
+                message: "Не удалось обновить категорию: \(error.localizedDescription)",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
+    }
+    
+    private func createNewCategory(_ category: CategoryMain) {
+        print("Creating new category with name: \(category.title) and icon: \(category.icon.rawValue)")
+        
+        do {
+            print("Attempting to create category in database")
+            try categoryService.createCategory(category)
+            print("Category created successfully, notifying delegate")
+            // Сначала закрываем экран, потом уведомляем делегата
+            coordinator?.dismissCurrentFlow()
+            delegate?.createcategory(category)
+        } catch {
+            print("Error creating category: \(error)")
+            // Показываем ошибку пользователю
+            let alert = UIAlertController(
+                title: "Ошибка",
+                message: "Не удалось создать категорию: \(error.localizedDescription)",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
     }
 
     @objc
@@ -151,6 +238,7 @@ extension NewCategoryViewController: UICollectionViewDelegateFlowLayout, UIColle
             selectedIndexPath = indexPath
             collectionView.reloadItems(at: [indexPath] + (previousIndexPath.map { [$0] } ?? []))
             newCategoryView = icons[indexPath.row]
+            selectedIcon = Asset.Icon(rawValue: icons[indexPath.row])
         }
         updateSaveButton()
     }

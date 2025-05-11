@@ -154,9 +154,20 @@ final class AnalyticsViewController: UIViewController {
             name: .expensesDidChange,
             object: nil
         )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(categoriesDidChange),
+            name: .categoriesDidChange,
+            object: nil
+        )
     }
     
     @objc private func expensesDidChange() {
+        loadExpenses(for: dayToday, periodType: nil)
+    }
+    
+    @objc private func categoriesDidChange() {
         loadExpenses(for: dayToday, periodType: nil)
     }
     

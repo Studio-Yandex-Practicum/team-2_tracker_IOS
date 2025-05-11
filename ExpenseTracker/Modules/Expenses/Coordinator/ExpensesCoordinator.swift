@@ -70,6 +70,15 @@ final class ExpensesCoordinator: Coordinator {
         navigationController.pushViewController(newCategoryController, animated: true)
     }
     
+    func showEditCategoryFlow(with delegate: CreateCategoryDelegate, category: CategoryMain) {
+        let editCategoryController = NewCategoryViewController()
+        editCategoryController.coordinator = self
+        editCategoryController.delegate = delegate
+        editCategoryController.categoryToEdit = category
+        editCategoryController.hidesBottomBarWhenPushed = true
+        navigationController.pushViewController(editCategoryController, animated: true)
+    }
+    
     func dismissCurrentFlow() {
         navigationController.popViewController(animated: true)
     }

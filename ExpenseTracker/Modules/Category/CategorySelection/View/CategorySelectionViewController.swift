@@ -377,17 +377,95 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
             updateSetButtonState()
         }
     }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        guard isSelectionFlow else { return nil }
+        
+        let delete = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            guard let self = self else { return }
+            
+            let category = self.categories[indexPath.row]
+            
+            // Проверяем, есть ли связанные расходы
+            let hasExpenses = self.categoryService.hasRelatedExpenses(category)
+            
+            let alert = UIAlertController(
+                title: "Удалить категорию",
+                message: hasExpenses ? "Данная категория имеет записи расходов. В случае удаления, все данные будут потеряны." : "Вы уверены, что хотите удалить данную категорию?",
+                preferredStyle: .alert
+            )
+            
+            alert.addAction(UIAlertAction(title: "Отмена", style: .cancel, handler: nil))
+            alert.addAction(
+                UIAlertAction(title: "Удалить", style: .destructive) { [weak self] _ in
+                    guard let self = self else { return }
+                    
+                    do {
+                        // Удаляем категорию и связанные расходы
+                        if try self.categoryService.deleteCategory(category) {
+                            // Удаляем категорию из массива
+                            self.categories.remove(at: indexPath.row)
+                            self.filteredCategories = self.categories
+                            
+                            // Обновляем таблицу
+                            tableView.deleteRows(at: [indexPath], with: .fade)
+                            
+                            // Если удалили выбранную категорию, сбрасываем выбор
+                            if self.selectedIndexPath == indexPath {
+                                self.selectedIndexPath = nil
+                                self.updateSetButtonState()
+                            }
+                        }
+                    } catch {
+                        print("Error deleting category: \(error)")
+                        // Показываем ошибку пользователю
+                        let errorAlert = UIAlertController(
+                            title: "Ошибка",
+                            message: "Не удалось удалить категорию",
+                            preferredStyle: .alert
+                        )
+                        errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
+                        self.present(errorAlert, animated: true)
+                    }
+                })
+            self.present(alert, animated: true)
+            completion(true)
+        }
+        delete.image = UIImage(named: "delete")?.withTintColor(.etButtonLabel)
+        delete.backgroundColor = UIColor.etbRed
+        
+        let edit = UIContextualAction(style: .normal, title: nil) { [weak self] _, _, completion in
+            guard let self = self else { return }
+            
+            // Получаем категорию для редактирования
+            let category = self.categories[indexPath.row]
+            
+            // Показываем экран редактирования категории
+            self.coordinator?.showEditCategoryFlow(with: self, category: category)
+            
+            completion(true)
+        }
+        
+        edit.image = UIImage(named: "edit")?.withTintColor(.etButtonLabel)
+        edit.backgroundColor = UIColor.etOrange
+        
+        return UISwipeActionsConfiguration(actions: [delete, edit])
+    }
 }
 
 extension CategorySelectionViewController: CreateCategoryDelegate {
     func createcategory(_ newCategory: CategoryMain) {
-        do {
-            try categoryService.createCategory(newCategory)
-            categories.append(newCategory)
+        // Перезагружаем все категории из базы данных
+        loadCategories()
+        
+        // Обновляем отфильтрованные категории
+        if categorySearchBar.text?.isEmpty ?? true {
             filteredCategories = categories
-            categoryTableViewController.reloadData()
-        } catch {
-            print("Error creating category: \(error)")
+        } else {
+            filteredCategories = categories.filter { $0.title.lowercased().contains(categorySearchBar.text?.lowercased() ?? "") }
         }
+        
+        // Обновляем таблицу
+        categoryTableViewController.reloadData()
     }
 }

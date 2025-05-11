@@ -356,16 +356,16 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
             // При редактировании используем ID существующего расхода
             if
                 let existingExpense = expenseToEdit,
-                let selectedCategory = selectedCategory,
                 let amountChanged = addMoney.text
             {
                 let updatedExpense = Expense(
                     id: existingExpense.id,
                     expense: convertToDecimal(from: amountChanged),
-                    category: Category(id: existingExpense.category.id, name: category, icon: selectedCategory.icon),
+                    category: Category(id: existingExpense.category.id, name: category, icon: selectedCategory?.icon ?? existingExpense.category.icon),
                     date: datePicker.date,
                     note: addNote.text
                 )
+               print(updatedExpense.note)
                 delegate?.updateExpense(updatedExpense)
             }
         }
