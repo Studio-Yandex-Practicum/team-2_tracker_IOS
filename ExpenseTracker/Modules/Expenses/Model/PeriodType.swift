@@ -11,4 +11,3 @@ enum PeriodType {
     case month
     case year
 }
-

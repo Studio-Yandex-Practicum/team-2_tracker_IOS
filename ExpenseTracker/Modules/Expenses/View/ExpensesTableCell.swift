@@ -85,22 +85,22 @@ final class ExpensesTableCell: UITableViewCell {
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-
+        
         setupUI()
     }
     
-//    func addSubviews() {
-//        expenceView.addSubview(expenceImage)
-//        contentView.addSubview(backView)
-//        backView.addSubview(expenceView)
-//        //        backView.addSubview(categoryMoney)
-//        //        backView.addSubview(noteMoney)
-//        backView.addSubview(labelMoneyCash)
-//    }
+    //    func addSubviews() {
+    //        expenceView.addSubview(expenceImage)
+    //        contentView.addSubview(backView)
+    //        backView.addSubview(expenceView)
+    //        //        backView.addSubview(categoryMoney)
+    //        //        backView.addSubview(noteMoney)
+    //        backView.addSubview(labelMoneyCash)
+    //    }
     
     func setupCell() {
         
-  //      guard var noteMonewCell = noteMoney.text?.isEmpty ?? nil else { return }
+        //      guard var noteMonewCell = noteMoney.text?.isEmpty ?? nil else { return }
         
         var constraints = [
             
@@ -127,7 +127,7 @@ final class ExpensesTableCell: UITableViewCell {
         ]
         
         if noteMoney.text != "" {
-         //   print(noteMonewCell)
+            //   print(noteMonewCell)
             
             backView.addSubview(categoryMoney)
             backView.addSubview(noteMoney)
@@ -141,9 +141,8 @@ final class ExpensesTableCell: UITableViewCell {
                 noteMoney.leadingAnchor.constraint(equalTo: expenceImage.trailingAnchor, constant: 16),
                 noteMoney.trailingAnchor.constraint(equalTo: backView.trailingAnchor, constant: -48)
             ]
-            
         }
-       else {
+        else {
             backView.addSubview(categoryMoney)
             
             constraints += [
@@ -163,10 +162,10 @@ final class ExpensesTableCell: UITableViewCell {
     // MARK: - Setup
     
     private func setupUI() {
-//        addSubviews()
+        //        addSubviews()
         setupViews()
         setupCell()
-//        setupConstraints()
+        //        setupConstraints()
     }
     
     private func setupViews() {
@@ -207,7 +206,7 @@ final class ExpensesTableCell: UITableViewCell {
             
             // LabelsStack constraints
             labelsStack.topAnchor.constraint(equalTo: backView.topAnchor, constant: -10),
-        
+            
             labelsStack.leadingAnchor.constraint(equalTo: expenceView.trailingAnchor, constant: 8),
             labelsStack.trailingAnchor.constraint(equalTo: labelMoneyCash.leadingAnchor, constant: -16),
             labelsStack.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
@@ -260,7 +259,7 @@ final class ExpensesTableCell: UITableViewCell {
             ])
         }
         
-//        setupConstraints()
+        //        setupConstraints()
     }
     
     func hideSeparator() {

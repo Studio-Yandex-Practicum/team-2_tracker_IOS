@@ -13,6 +13,7 @@ final class ExpensesViewController: UIViewController {
     private var selectedCategories: Set<String>?
     private var selectedDateRange: (start: Date, end: Date)?
     private var tempDateRange: (start: Date, end: Date)?
+    private var indexCell: IndexPath?
     
     private lazy var dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -167,8 +168,6 @@ final class ExpensesViewController: UIViewController {
     
     @objc
     private func addExpense() {
-//        let addExpenseVC = NewCategoryViewController()
-//        addExpenseVC.delegate = self
         coordinator?.showAddExpenseFlow(with: self)
     }
     
@@ -582,7 +581,6 @@ extension ExpensesViewController: UITableViewDelegate, UITableViewDataSource {
                 let expense = sortedExpenses[indexPath.row]
                 coordinator?.showChangeExpenseFlow(with: self, expense: expense)
             }
-            
             completion(true)
         }
         
@@ -683,14 +681,7 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
     }
 }
 
-//extension ExpensesViewController: CreateCategoryDelegate {
-//    
-//    func createcategory(_ newCategory: CategoryMain) {
-//    }
-//}
-
 extension ExpensesViewController: ChangeExpensesDelegate {
-    
     func createExpense(_ newExpense: Expense) {
         viewModel.addExpense(expense: newExpense)
         loadExpenses(for: dayToday, periodType: nil)

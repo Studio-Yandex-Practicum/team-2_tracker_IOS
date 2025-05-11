@@ -37,11 +37,11 @@ final class AnalyticsViewController: UIViewController {
         labelMoney.translatesAutoresizingMaskIntoConstraints = false
         return labelMoney
     }()
-
+    
     private let donutChartView: DonutChartUIKitView = {
         let view = DonutChartUIKitView()
         view.translatesAutoresizingMaskIntoConstraints = false
-       
+        
         return view
     }()
     
@@ -55,7 +55,7 @@ final class AnalyticsViewController: UIViewController {
         tableView.translatesAutoresizingMaskIntoConstraints = false
         return tableView
     }()
-
+    
     private lazy var sortedCategoryButton: FiltersButton = {
         let image = UIImage(named: Asset.Icon.arrowSortDown.rawValue)?.withTintColor(.etPrimaryLabel)
         let categoryButton = FiltersButton(title: AnalyticsConstants.sortButtonTitle, image: image ?? UIImage())
@@ -285,11 +285,11 @@ final class AnalyticsViewController: UIViewController {
         
         // Анимируем появление
         UIView.animate(withDuration: 0.5,
-                      delay: 0,
-                      usingSpringWithDamping: 0.7,
-                      initialSpringVelocity: 0.5,
-                      options: .curveEaseOut,
-                      animations: {
+                       delay: 0,
+                       usingSpringWithDamping: 0.7,
+                       initialSpringVelocity: 0.5,
+                       options: .curveEaseOut,
+                       animations: {
             self.donutChartView.transform = .identity
             self.donutChartView.alpha = 1
         })
@@ -335,6 +335,7 @@ final class AnalyticsViewController: UIViewController {
         updateMoneyLabel(with: viewModel.totalAmount.value)
         updateDateLabel()
         reloadTable()
+        calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etCards), for: .normal)
         
         if viewModel.getExpensesByCategory().isEmpty {
             showEmptyState()
@@ -450,7 +451,7 @@ final class AnalyticsViewController: UIViewController {
             view.addSubview(expenseCategoryTable)
         }
     }
-
+    
     private func setupLayout() {
         navigationController?.setNavigationBarHidden(true, animated: false)
         
@@ -671,6 +672,15 @@ extension AnalyticsViewController: DateRangeCalendarViewDelegate {
             // Применяем фильтр только при подтверждении
             viewModel.setSelectedDateRange(dateRange)
             updateUI()
+            
+            // Сбрасываем выбранные кнопки периода
+            [dayButton, weekButton, monthButton, yearButton].forEach {
+                $0.isSelected = false
+                $0.backgroundColor = .etCardsToggled
+                $0.setTitleColor(.etCards, for: .normal)
+            }
+            
+            calendarButton.setImage(UIImage(named: Asset.Icon.calendar.rawValue)?.withTintColor(.etAccent), for: .normal)
         }
     }
     

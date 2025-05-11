@@ -16,6 +16,12 @@ final class ExpensesViewModel {
         expenses.removeAll { $0.id == expense.id }
     }
     
+    func changeExpense(expense: Expense, indexPath: IndexPath) -> [Expense] {
+        expenses[indexPath.row] = expense
+        expenses
+        return expenses
+    }
+    
     func getAllExpenses() -> [Expense] {
         return expenses
     }

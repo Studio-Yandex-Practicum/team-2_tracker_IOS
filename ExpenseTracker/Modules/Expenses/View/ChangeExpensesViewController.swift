@@ -5,6 +5,10 @@ protocol ChangeExpensesDelegate: AnyObject {
     func updateExpense(_ updatedExpense: Expense)
 }
 
+protocol ChangeExpenseDelegate: AnyObject {
+    func changeExpense(_ changeExpense: Expense)
+}
+
 enum NewCategory {
     
     case add
@@ -120,7 +124,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     private lazy var saveButton: MainButton = {
         let saveButton = MainButton(title: newCategory.saveButtonText)
-        saveButton.isEnabled = true
+        saveButton.isEnabled = false
         saveButton.backgroundColor = .etInactive
         return saveButton
     }()
@@ -164,10 +168,17 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         let tapGesture = UITapGestureRecognizer(target: self, action: action)
         view.addGestureRecognizer(tapGesture)
     }
-
+    
     @objc
     private func cancelButtonAction() {
-        self.navigationController?.popToRootViewController(animated: true)
+        let alert = UIAlertController(title: "Уверены, что хотите выйти?", message: "При выходе данные не будут сохранены", preferredStyle: .alert)
+        
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel, handler: nil))
+        alert.addAction(UIAlertAction(title: "Выйти", style: .default) { _ in
+            
+            self.navigationController?.popToRootViewController(animated: true)
+        })
+        present(alert, animated: true) 
     }
     
     @objc
@@ -195,7 +206,7 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderVisibility()
     }
-
+    
     func updatePlaceholderVisibility() {
         // Показываем плейсхолдер, если текст пустой
         placeholderLabel.isHidden = !addNote.text.isEmpty
@@ -234,16 +245,16 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
                     addCategory.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
                     addCategory.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
                     addCategory.heightAnchor.constraint(equalToConstant: 50)
-                    ]
-                    } else {
-                        view.addSubview(changeCategory)
-                        constraints += [
-                            changeCategory.bottomAnchor.constraint(equalTo: addDate.topAnchor, constant: -12),
-                            changeCategory.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-                            changeCategory.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-                            changeCategory.heightAnchor.constraint(equalToConstant: 50)
-                            ]
-                    }
+                ]
+            } else {
+                view.addSubview(changeCategory)
+                constraints += [
+                    changeCategory.bottomAnchor.constraint(equalTo: addDate.topAnchor, constant: -12),
+                    changeCategory.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+                    changeCategory.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+                    changeCategory.heightAnchor.constraint(equalToConstant: 50)
+                ]
+            }
         } else {
             view.addSubview(changeCategory)
             constraints += [

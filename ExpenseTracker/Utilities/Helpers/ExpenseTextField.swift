@@ -11,13 +11,13 @@ final class ExpenseTextField: UITextField {
         width: Constants.paddingWidth,
         height: Constants.defaultHeight
     ))
-
-//    private var isIconHidden: Bool = true
-
+    
+    //    private var isIconHidden: Bool = true
+    
     // MARK: - Init
     
     init(placeholder: String,
-   //      isEyeIconHidden: Bool = true,
+         //      isEyeIconHidden: Bool = true,
          backgroundColor: UIColor = .etCardsToggled,
          titleColor: UIColor = .etCards,
          cornerRadius: CGFloat = Constants.defaultCornerRadius,
@@ -25,7 +25,7 @@ final class ExpenseTextField: UITextField {
          borderWidth: CGFloat = 1) {
         
         super.init(frame: .zero)
-//        self.isIconHidden = isEyeIconHidden
+        //        self.isIconHidden = isEyeIconHidden
         
         setupTextField(placeholder: placeholder,
                        backgroundColor: backgroundColor,
@@ -33,24 +33,24 @@ final class ExpenseTextField: UITextField {
                        borderColor: borderColor,
                        borderWidth: borderWidth)
         
-//        if !isEyeIconHidden {
-//            setupToggleButton(name: String)
-//        }
+        //        if !isEyeIconHidden {
+        //            setupToggleButton(name: String)
+        //        }
         
-//        delegate = self
+        //        delegate = self
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     // MARK: - Setup Methods
     
-     func setupTextField(placeholder: String,
-                                backgroundColor: UIColor,
-                                titleColor: UIColor,
-                                borderColor: UIColor,
-                                borderWidth: CGFloat) {
+    func setupTextField(placeholder: String,
+                        backgroundColor: UIColor,
+                        titleColor: UIColor,
+                        borderColor: UIColor,
+                        borderWidth: CGFloat) {
         self.attributedPlaceholder = NSAttributedString(
             string: placeholder,
             attributes: [.foregroundColor: UIColor.etSecondaryLabel]
@@ -81,15 +81,15 @@ final class ExpenseTextField: UITextField {
         rightView = toggleButton
         rightViewMode = .always
     }
-
+    
     // MARK: - Actions
     
     @objc
     private func togglePasswordVisibility() {
-//        let imageName = isSecureTextEntry ? Asset.Icon.eyeOn.rawValue : Asset.Icon.eyeOff.rawValue
-//        let image = UIImage(named: imageName)?.withTintColor(.etPrimaryLabel)
-//        toggleButton.setImage(image, for: .normal)
-//        isSecureTextEntry.toggle()
+        //        let imageName = isSecureTextEntry ? Asset.Icon.eyeOn.rawValue : Asset.Icon.eyeOff.rawValue
+        //        let image = UIImage(named: imageName)?.withTintColor(.etPrimaryLabel)
+        //        toggleButton.setImage(image, for: .normal)
+        //        isSecureTextEntry.toggle()
     }
 }
 
@@ -99,7 +99,7 @@ final class ExpenseTextField: UITextField {
 //    private func textFieldDidBeginEditing(_ textField: UITextField) {
 //        layer.borderColor = UIColor.etAccent.cgColor
 //    }
-//    
+//
 //    private func textFieldDidEndEditing(_ textField: UITextField) {
 //        layer.borderColor = UIColor.clear.cgColor
 //    }
