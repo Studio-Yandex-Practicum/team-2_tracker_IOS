@@ -14,7 +14,6 @@ final class ExpensesViewController: UIViewController {
     private var selectedCategories: Set<String>?
     private var selectedDateRange: (start: Date, end: Date)?
     private var tempDateRange: (start: Date, end: Date)?
-    
     private var selectedCategory: CategoryMain?
     
     private lazy var dateFormatter: DateFormatter = {
@@ -214,8 +213,6 @@ final class ExpensesViewController: UIViewController {
     
     @objc
     private func addExpense() {
-//        let addExpenseVC = NewCategoryViewController()
-//        addExpenseVC.delegate = self
         coordinator?.showAddExpenseFlow(with: self)
     }
     
@@ -784,7 +781,6 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
 }
 
 extension ExpensesViewController: ChangeExpensesDelegate {
-    
     func createExpense(_ newExpense: Expense) {
         viewModel.addExpense(
             expense: newExpense.expense,

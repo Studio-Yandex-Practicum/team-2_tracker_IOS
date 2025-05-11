@@ -22,6 +22,10 @@ final class SettingsCoordinator: Coordinator {
         settingsViewController.coordinator = self
         navigationController.setViewControllers([settingsViewController], animated: true)
     }
+    
+    func exit() {
+        
+    }
 }
 
 extension SettingsCoordinator: TabCoordinator {

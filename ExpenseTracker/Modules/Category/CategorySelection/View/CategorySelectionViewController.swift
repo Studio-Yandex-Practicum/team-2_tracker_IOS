@@ -266,7 +266,8 @@ extension CategorySelectionViewController: UISearchBarDelegate {
         if searchText.isEmpty {
             filteredCategories = categories
         } else {
-            filteredCategories = categories.filter { $0.title.lowercased().contains(searchText.lowercased()) }
+            filteredCategories = categories.filter { $0.title.lowercased().contains(searchText.lowercased())
+            }
         }
         
         if filteredCategories.isEmpty {

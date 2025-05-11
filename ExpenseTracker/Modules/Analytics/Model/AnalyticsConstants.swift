@@ -22,4 +22,4 @@ enum AnalyticsConstants {
     static let donutChartLineWidth: CGFloat = 16
     static let donutChartOverlapAngle: CGFloat = 8
     static let cellHeight: CGFloat = 60
-} 
+}
