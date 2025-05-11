@@ -1,5 +1,6 @@
 import Foundation
 import CoreData
+import FirebaseAuth
 
 final class ExpensesViewModel: NSObject {
     
@@ -27,6 +28,11 @@ final class ExpensesViewModel: NSObject {
         let fetchRequest: NSFetchRequest<ExpenseModel> = ExpenseModel.fetchRequest()
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
         
+        // Добавляем предикат для фильтрации по userID
+        if let currentUserID = Auth.auth().currentUser?.uid {
+            fetchRequest.predicate = NSPredicate(format: "userID == %@", currentUserID)
+        }
+        
         fetchedResultsController = NSFetchedResultsController(
             fetchRequest: fetchRequest,
             managedObjectContext: context,
@@ -46,23 +52,35 @@ final class ExpensesViewModel: NSObject {
     }
     
     func addExpense(expense: Decimal, category: CategoryMain, date: Date) {
+        print("Adding new expense for userID: \(Auth.auth().currentUser?.uid ?? "nil")")
+        print("Expense details - Amount: \(expense), Category: \(category.title), Date: \(date)")
+        
         // Ищем существующую категорию в базе
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@", category.title, category.icon.rawValue)
+        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@ AND userID == %@", 
+            category.title, 
+            category.icon.rawValue,
+            Auth.auth().currentUser?.uid ?? ""
+        )
         
         do {
             let existingCategories = try context.fetch(fetchRequest)
+            print("Found \(existingCategories.count) existing categories")
+            
             let categoryModel: CategoryModel
             
             if let existingCategory = existingCategories.first {
                 // Используем существующую категорию
+                print("Using existing category: \(existingCategory.name ?? "unknown")")
                 categoryModel = existingCategory
             } else {
                 // Если категория не найдена, создаем новую
+                print("Creating new category: \(category.title)")
                 categoryModel = CategoryModel(context: context)
                 categoryModel.id = UUID()
                 categoryModel.name = category.title
                 categoryModel.icon = category.icon.rawValue
+                categoryModel.userID = Auth.auth().currentUser?.uid
             }
             
             expenseService.createExpense(
@@ -71,6 +89,7 @@ final class ExpensesViewModel: NSObject {
                 note: "",
                 category: categoryModel
             )
+            print("Expense created successfully")
             NotificationCenter.default.post(name: .expensesDidChange, object: nil)
         } catch {
             print("Error creating expense: \(error)")
@@ -115,10 +134,15 @@ final class ExpensesViewModel: NSObject {
         expenseModel.amount = NSDecimalNumber(decimal: updatedExpense.expense)
         expenseModel.date = updatedExpense.date
         expenseModel.note = updatedExpense.note
+        expenseModel.userID = Auth.auth().currentUser?.uid
         
         // Ищем существующую категорию в базе
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@", updatedExpense.category.name, updatedExpense.category.icon.rawValue)
+        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@ AND userID == %@", 
+            updatedExpense.category.name, 
+            updatedExpense.category.icon.rawValue,
+            Auth.auth().currentUser?.uid ?? ""
+        )
         
         do {
             let existingCategories = try context.fetch(fetchRequest)
@@ -131,6 +155,7 @@ final class ExpensesViewModel: NSObject {
                 categoryModel.id = UUID()
                 categoryModel.name = updatedExpense.category.name
                 categoryModel.icon = updatedExpense.category.icon.rawValue
+                categoryModel.userID = Auth.auth().currentUser?.uid
                 expenseModel.category = categoryModel
             }
             

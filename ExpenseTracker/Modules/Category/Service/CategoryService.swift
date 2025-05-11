@@ -1,5 +1,6 @@
 import Foundation
 import CoreData
+import FirebaseAuth
 
 final class CategoryService {
     private let context: NSManagedObjectContext
@@ -10,7 +11,7 @@ final class CategoryService {
     }
     
     private func initializeBaseCategories() {
-        // Проверяем, есть ли уже категории в базе
+        // Проверяем, есть ли уже категории в базе для текущего пользователя
         let existingCategories = fetchAllCategories()
         if !existingCategories.isEmpty {
             return // Если категории уже есть, не добавляем их снова
@@ -29,9 +30,12 @@ final class CategoryService {
     func createCategory(_ category: CategoryMain) throws {
         print("Attempting to create category with name: \(category.title) and icon: \(category.icon.rawValue)")
         
-        // Проверяем, существует ли уже категория с таким именем
+        // Проверяем, существует ли уже категория с таким именем для текущего пользователя
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "name == %@", category.title)
+        fetchRequest.predicate = NSPredicate(format: "name == %@ AND userID == %@", 
+            category.title,
+            Auth.auth().currentUser?.uid ?? ""
+        )
         
         do {
             let existingCategories = try context.fetch(fetchRequest)
@@ -48,6 +52,7 @@ final class CategoryService {
             categoryModel.id = UUID()
             categoryModel.name = category.title
             categoryModel.icon = category.icon.rawValue
+            categoryModel.userID = Auth.auth().currentUser?.uid
             
             try context.save()
             print("Category created successfully")
@@ -60,8 +65,15 @@ final class CategoryService {
     func fetchAllCategories() -> [CategoryModel] {
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
         
+        // Добавляем предикат для фильтрации по userID
+        if let currentUserID = Auth.auth().currentUser?.uid {
+            fetchRequest.predicate = NSPredicate(format: "userID == %@", currentUserID)
+        }
+        
         do {
-            return try context.fetch(fetchRequest)
+            let categories = try context.fetch(fetchRequest)
+            print("Fetched \(categories.count) categories for userID: \(Auth.auth().currentUser?.uid ?? "nil")")
+            return categories
         } catch {
             print("Error fetching categories: \(error)")
             return []
@@ -71,9 +83,12 @@ final class CategoryService {
     func updateCategory(_ category: CategoryMain, oldName: String, oldIcon: String) throws {
         print("Attempting to update category from \(oldName) to \(category.title)")
         
-        // Сначала проверяем, существует ли категория с новым именем
+        // Сначала проверяем, существует ли категория с новым именем для текущего пользователя
         let checkFetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
-        checkFetchRequest.predicate = NSPredicate(format: "name == %@", category.title)
+        checkFetchRequest.predicate = NSPredicate(format: "name == %@ AND userID == %@", 
+            category.title,
+            Auth.auth().currentUser?.uid ?? ""
+        )
         
         do {
             let existingWithNewName = try context.fetch(checkFetchRequest)
@@ -86,7 +101,10 @@ final class CategoryService {
             
             // Ищем категорию для обновления
             let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
-            fetchRequest.predicate = NSPredicate(format: "name == %@", oldName)
+            fetchRequest.predicate = NSPredicate(format: "name == %@ AND userID == %@", 
+                oldName,
+                Auth.auth().currentUser?.uid ?? ""
+            )
             
             let existingCategories = try context.fetch(fetchRequest)
             print("Found \(existingCategories.count) categories with old name: \(oldName)")
@@ -128,7 +146,11 @@ final class CategoryService {
     
     func deleteCategory(_ category: CategoryMain) throws -> Bool {
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@", category.title, category.icon.rawValue)
+        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@ AND userID == %@", 
+            category.title, 
+            category.icon.rawValue,
+            Auth.auth().currentUser?.uid ?? ""
+        )
         
         do {
             let existingCategories = try context.fetch(fetchRequest)
@@ -161,7 +183,11 @@ final class CategoryService {
     
     func hasRelatedExpenses(_ category: CategoryMain) -> Bool {
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@", category.title, category.icon.rawValue)
+        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@ AND userID == %@", 
+            category.title, 
+            category.icon.rawValue,
+            Auth.auth().currentUser?.uid ?? ""
+        )
         
         do {
             let existingCategories = try context.fetch(fetchRequest)
