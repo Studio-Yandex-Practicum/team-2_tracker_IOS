@@ -50,7 +50,7 @@ final class CategorySelectionViewController: UIViewController {
         tableView.layer.cornerRadius = 12
         tableView.separatorStyle = .none
         tableView.backgroundColor = .etBackground
-        tableView.contentInset = UIEdgeInsets(top: 26, left: 0, bottom: 0, right: 0)
+        tableView.contentInset = .zero
         tableView.allowsMultipleSelection = !isSelectionFlow
         tableView.showsVerticalScrollIndicator = false
         tableView.translatesAutoresizingMaskIntoConstraints = false
@@ -89,9 +89,6 @@ final class CategorySelectionViewController: UIViewController {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        if !filteredCategories.isEmpty {
-            scrollToTopOfTableView()
-        }
     }
     
     override func viewDidLoad() {
@@ -144,7 +141,7 @@ final class CategorySelectionViewController: UIViewController {
             setButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             setButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             
-            categoryTableViewController.topAnchor.constraint(equalTo: categorySearchBar.bottomAnchor, constant: 16),
+            categoryTableViewController.topAnchor.constraint(equalTo: categorySearchBar.bottomAnchor, constant: 40),
             categoryTableViewController.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             categoryTableViewController.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             categoryTableViewController.bottomAnchor.constraint(equalTo: setButton.topAnchor, constant: -23),
@@ -194,8 +191,9 @@ final class CategorySelectionViewController: UIViewController {
     }
     
     private func updateSetButtonState() {
-        setButton.isEnabled = !selectedCategories.isEmpty
-        setButton.backgroundColor = !selectedCategories.isEmpty ? .etAccent : .etInactive
+        let validate = !selectedCategories.isEmpty && selectedIndexPath != nil
+        setButton.isEnabled = validate
+        setButton.backgroundColor = validate ? .etAccent : .etInactive
     }
     
     private func setupCheckBox() {
@@ -223,13 +221,12 @@ final class CategorySelectionViewController: UIViewController {
     
     @objc
     private func showAddExpenseFlow() {
-        prepareForTransition()
         coordinator?.dismissCurrentFlow()
     }
 
     @objc
     private func showNewCategoryFlow() {
-        
+        prepareForTransition()
         coordinator?.showNewCategoryFlow(with: self)
     }
     
@@ -338,7 +335,16 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
         guard let cell = tableView.cellForRow(at: indexPath) as? CategorySelectionCell else {
             return
         }
-        selectedIndexPath = indexPath
+        
+        if isSelectionFlow {
+            if selectedIndexPath != nil {
+                selectedIndexPath = nil
+            } else {
+                selectedIndexPath = indexPath
+            }
+        } else {
+            selectedIndexPath = indexPath
+        }
         
         let categoryTitle = categories[indexPath.row].title
         let categoryIcon = categories[indexPath.row].icon
@@ -350,6 +356,7 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
         checkmarkImageView.isHidden = true
         
         let selectedCategory = categories[indexPath.row]
+        
         selectedCategories.insert(selectedCategory.title)
         cell.isCellSelected.toggle()
         updateSetButtonState()
@@ -362,6 +369,7 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
         let selectedCategory = categories[indexPath.row]
         
         if isSelectionFlow {
+            selectedIndexPath = nil
             cell.isCellSelected = false
         } else {
             selectedCategories.remove(selectedCategory.title)

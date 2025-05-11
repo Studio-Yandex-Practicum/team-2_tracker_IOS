@@ -46,12 +46,25 @@ final class ExpensesViewModel: NSObject {
     }
     
     func addExpense(expense: Decimal, category: CategoryMain, date: Date) {
-        let categoryModel = CategoryModel(context: context)
-        categoryModel.id = UUID()
-        categoryModel.name = category.title
-        categoryModel.icon = category.icon.rawValue
+        // Ищем существующую категорию в базе
+        let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@", category.title, category.icon.rawValue)
         
         do {
+            let existingCategories = try context.fetch(fetchRequest)
+            let categoryModel: CategoryModel
+            
+            if let existingCategory = existingCategories.first {
+                // Используем существующую категорию
+                categoryModel = existingCategory
+            } else {
+                // Если категория не найдена, создаем новую
+                categoryModel = CategoryModel(context: context)
+                categoryModel.id = UUID()
+                categoryModel.name = category.title
+                categoryModel.icon = category.icon.rawValue
+            }
+            
             expenseService.createExpense(
                 amount: expense,
                 date: date,
@@ -103,13 +116,24 @@ final class ExpensesViewModel: NSObject {
         expenseModel.date = updatedExpense.date
         expenseModel.note = updatedExpense.note
         
-        let categoryModel = CategoryModel(context: context)
-        categoryModel.id = updatedExpense.category.id
-        categoryModel.name = updatedExpense.category.name
-        categoryModel.icon = updatedExpense.category.icon.rawValue
-        expenseModel.category = categoryModel
+        // Ищем существующую категорию в базе
+        let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
+        fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@", updatedExpense.category.name, updatedExpense.category.icon.rawValue)
         
         do {
+            let existingCategories = try context.fetch(fetchRequest)
+            if let existingCategory = existingCategories.first {
+                // Используем существующую категорию
+                expenseModel.category = existingCategory
+            } else {
+                // Если категория не найдена, создаем новую
+                let categoryModel = CategoryModel(context: context)
+                categoryModel.id = UUID()
+                categoryModel.name = updatedExpense.category.name
+                categoryModel.icon = updatedExpense.category.icon.rawValue
+                expenseModel.category = categoryModel
+            }
+            
             expenseService.updateExpense(expenseModel)
             NotificationCenter.default.post(name: .expensesDidChange, object: nil)
         } catch {
