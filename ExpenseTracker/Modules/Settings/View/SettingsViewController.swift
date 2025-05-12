@@ -86,6 +86,11 @@ final class SettingsViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        
+        // Загружаем сохраненную тему
+        let isDarkTheme = UserDefaults.standard.bool(forKey: "isDarkTheme")
+        themeSwitch.isOn = isDarkTheme
+        themeLabel.text = isDarkTheme ? "Темная тема" : "Светлая тема"
     }
 
     
@@ -167,6 +172,10 @@ final class SettingsViewController: UIViewController {
     
     @objc
     private func themeSwitchChanged(_ sender: UISwitch) {
+        // Сохраняем выбранную тему в UserDefaults
+        UserDefaults.standard.set(sender.isOn, forKey: "isDarkTheme")
+        UserDefaults.standard.synchronize()
+        
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             windowScene.windows.forEach { window in
                 window.overrideUserInterfaceStyle = sender.isOn ? .dark : .light

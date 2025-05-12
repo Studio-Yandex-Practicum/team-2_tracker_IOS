@@ -61,7 +61,7 @@ final class CategorySelectionViewController: UIViewController {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.image = UIImage(named: Asset.Icon.checkboxPressed.rawValue)
-        imageView.isHidden = false
+        imageView.isHidden = true
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()
@@ -96,6 +96,23 @@ final class CategorySelectionViewController: UIViewController {
         setupUI()
         loadCategories()
         filteredCategories = categories
+        
+        // Загружаем сохраненные категории и состояние кнопки "Все категории"
+        if !isSelectionFlow {
+            if let savedCategories = UserDefaults.standard.array(forKey: "selectedCategories") as? [String] {
+                selectedCategories = Set(savedCategories)
+            }
+            
+            // Проверяем, было ли сохранено состояние "Все категории"
+            let isAllCategoriesSelected = UserDefaults.standard.bool(forKey: "isAllCategoriesSelected")
+            if isAllCategoriesSelected {
+                checkmarkImageView.isHidden = false
+                selectedCategories = Set(categories.map(\.title))
+            } else {
+                checkmarkImageView.isHidden = true
+            }
+        }
+        
         setupSetButton()
         setupCategoryTableViewButton()
         categoryTableViewController.reloadData()
@@ -192,8 +209,8 @@ final class CategorySelectionViewController: UIViewController {
     
     private func updateSetButtonState() {
         let validate = !selectedCategories.isEmpty && selectedIndexPath != nil
-        setButton.isEnabled = validate
-        setButton.backgroundColor = validate ? .etAccent : .etInactive
+        setButton.isEnabled = validate || !checkmarkImageView.isHidden
+        setButton.backgroundColor = validate || !checkmarkImageView.isHidden ? .etAccent : .etInactive
     }
     
     private func setupCheckBox() {
@@ -235,6 +252,9 @@ final class CategorySelectionViewController: UIViewController {
         if isSelectionFlow {
             delegateExpence?.didSelectCategoryForExpense(categoryForExpense)
         } else {
+            // Сохраняем выбранные категории и состояние кнопки "Все категории"
+            UserDefaults.standard.set(Array(selectedCategories), forKey: "selectedCategories")
+            UserDefaults.standard.set(!checkmarkImageView.isHidden, forKey: "isAllCategoriesSelected")
             delegate?.didSelectCategories(selectedCategories)
         }
         coordinator?.dismissCurrentFlow()
@@ -244,6 +264,20 @@ final class CategorySelectionViewController: UIViewController {
     private func allCategoriesButtonTapped() {
         setupCheckBox()
         deselectAllCells()
+        
+        // Обновляем состояние в UserDefaults
+        if !checkmarkImageView.isHidden {
+            // Если выбраны все категории
+            UserDefaults.standard.set(true, forKey: "isAllCategoriesSelected")
+            UserDefaults.standard.removeObject(forKey: "selectedCategories")
+            selectedCategories = Set(categories.map(\.title))
+        } else {
+            // Если отменен выбор всех категорий
+            UserDefaults.standard.set(false, forKey: "isAllCategoriesSelected")
+            UserDefaults.standard.removeObject(forKey: "selectedCategories")
+            selectedCategories = []
+        }
+        
         updateSetButtonState()
     }
     
@@ -306,7 +340,18 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
         }
         let isFirst = indexPath.row == 0
         let isLast = indexPath.row == filteredCategories.count - 1
-        cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
+        let category = filteredCategories[indexPath.row]
+        cell.configure(with: category, isFirst: isFirst, isLast: isLast)
+        
+        // Если выбраны все категории, не отмечаем отдельные ячейки
+        if !isSelectionFlow && !checkmarkImageView.isHidden {
+            cell.isCellSelected = false
+            tableView.deselectRow(at: indexPath, animated: false)
+        } else if !isSelectionFlow && selectedCategories.contains(category.title) {
+            cell.isCellSelected = true
+            tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+        }
+        
         return cell
     }
     

@@ -11,8 +11,26 @@ final class DateRangeCalendarView: UIView {
     
     weak var delegate: DateRangeCalendarViewDelegate?
     
-    private var selectedStartDate: Date?
-    private var selectedEndDate: Date?
+    private var selectedStartDate: Date? {
+        didSet {
+            if let date = selectedStartDate {
+                UserDefaults.standard.set(date.timeIntervalSince1970, forKey: "calendarSelectedStartDate")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "calendarSelectedStartDate")
+            }
+        }
+    }
+    
+    private var selectedEndDate: Date? {
+        didSet {
+            if let date = selectedEndDate {
+                UserDefaults.standard.set(date.timeIntervalSince1970, forKey: "calendarSelectedEndDate")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "calendarSelectedEndDate")
+            }
+        }
+    }
+    
     private var dates: [Date] = []
     private var currentMonth: Date = Date()
     
@@ -275,6 +293,17 @@ final class DateRangeCalendarView: UIView {
         super.init(frame: frame)
         setupUI()
         generateDates()
+        
+        // Восстанавливаем выбранные даты
+        if let startTimestamp = UserDefaults.standard.object(forKey: "calendarSelectedStartDate") as? TimeInterval {
+            selectedStartDate = Date(timeIntervalSince1970: startTimestamp)
+        }
+        if let endTimestamp = UserDefaults.standard.object(forKey: "calendarSelectedEndDate") as? TimeInterval {
+            selectedEndDate = Date(timeIntervalSince1970: endTimestamp)
+        }
+        
+        // Обновляем отображение дат
+        updateDateRangeText()
     }
     
     required init?(coder: NSCoder) {
