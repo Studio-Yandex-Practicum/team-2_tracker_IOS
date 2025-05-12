@@ -7,14 +7,13 @@ final class CoreDataStackManager {
     
     static let shared = CoreDataStackManager()
     
-    private init() {
-        setupPersistentContainer()
-    }
+    private init() { }
     
-    private var persistentContainer: NSPersistentContainer!
+    // MARK: - Convenience Properties
     
-    private func setupPersistentContainer() {
-        persistentContainer = NSPersistentContainer(name: "ExpenseTrackerCoreData")
+    // Ленивая инициализация persistentContainer
+    private lazy var persistentContainer: NSPersistentContainer = {
+        let persistentContainer = NSPersistentContainer(name: "ExpenseTrackerCoreData")
         
         persistentContainer.loadPersistentStores { description, error in
             if let error = error as NSError? {
@@ -24,9 +23,8 @@ final class CoreDataStackManager {
         
         persistentContainer.viewContext.automaticallyMergesChangesFromParent = true
         persistentContainer.viewContext.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
-    }
-    
-    // MARK: - Convenience Properties
+        return persistentContainer
+    }()
     
     /// Основной контекст для работы с данными
     var context: NSManagedObjectContext {
