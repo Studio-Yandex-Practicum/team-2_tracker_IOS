@@ -87,10 +87,6 @@ final class CategorySelectionViewController: UIViewController {
     
     // MARK: - Lifecycle Methods
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()

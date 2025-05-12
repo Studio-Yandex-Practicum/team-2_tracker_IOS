@@ -129,10 +129,7 @@ final class NewCategoryViewController: UIViewController {
     }
     
     func updateSaveButton() {
-        guard
-            let categoryName = newCategoryTextField.text,
-            let categoryIconSelected = selectedIndexPath
-        else { return }
+        guard let categoryName = newCategoryTextField.text else { return }
        
         let categoryNameWithoutSpaces = categoryName.replacingOccurrences(of: " ", with: "")
         saveButton.isEnabled = !categoryNameWithoutSpaces.isEmpty

@@ -213,7 +213,11 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     @objc
     private func addCategoryButton() {
-        coordinator?.showCategorySelectionOneFlow(with: self)
+        if newCategory == .add {
+            coordinator?.showCategorySelectionOneFlow(with: self)
+        } else {
+            coordinator?.showCategorySelectionFlow()
+        }
     }
     
     func setupNote() {
@@ -306,7 +310,11 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     @objc
     private func showCategorySelectionFlow() {
-        coordinator?.showCategorySelectionFlow()
+        if newCategory == .add {
+            coordinator?.showCategorySelectionOneFlow(with: self)
+        } else {
+            coordinator?.showCategorySelectionFlow()
+        }
     }
     
     @objc
@@ -401,10 +409,8 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
             delegate?.createExpense(expense)
         case .change:
             // При редактировании используем ID существующего расхода
-            if
-                let existingExpense = expenseToEdit,
-                let amountChanged = addMoney.text
-            {
+            if let existingExpense = expenseToEdit,
+                let amountChanged = addMoney.text {
                 let updatedExpense = Expense(
                     id: existingExpense.id,
                     expense: convertToDecimal(from: amountChanged),

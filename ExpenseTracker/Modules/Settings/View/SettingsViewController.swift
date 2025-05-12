@@ -6,7 +6,6 @@ final class SettingsViewController: UIViewController {
     
     weak var coordinator: SettingsCoordinator?
     private let settingsService: SettingsService
-    private var customNavigationBar: CustomBackBarItem?
     
     init() {
         self.settingsService = SettingsService()
@@ -33,11 +32,13 @@ final class SettingsViewController: UIViewController {
         let button = SettingThemeTableViewButton(title: SettingsLabel.theme.rawValue)
         button.layer.cornerRadius = 12
         button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
     private lazy var exportTableViewButton: SettingExportTableViewButton = {
         let button = SettingExportTableViewButton(title: SettingsLabel.exportReport.rawValue)
+        button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
@@ -45,19 +46,24 @@ final class SettingsViewController: UIViewController {
         let button = SettingLogoutTableViewButton(title: SettingsLabel.logout.rawValue)
         button.layer.cornerRadius = 12
         button.layer.maskedCorners = [ .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        button.translatesAutoresizingMaskIntoConstraints = false
         return button
     }()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.backgroundColor = .etBackground
         setupUI()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: false)
     }
 
     // MARK: - Private Methods
     
     private func setupUI() {
-        view.backgroundColor = .etBackground
-
         setupViews()
         setupExportTableViewButton()
         setupLogoutTableViewButton()
@@ -72,14 +78,13 @@ final class SettingsViewController: UIViewController {
     }
 
     private func setupViews() {
-        navigationController?.setNavigationBarHidden(true, animated: false)
         view.addSubview(settingsLabel)
         view.addSubview(themetTableViewButton)
         view.addSubview(exportTableViewButton)
         view.addSubview(logoutTableViewButton)
 
         NSLayoutConstraint.activate([
-            settingsLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
+            settingsLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 16),
             settingsLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
             themetTableViewButton.topAnchor.constraint(equalTo: settingsLabel.bottomAnchor, constant: 16),
@@ -112,25 +117,18 @@ final class SettingsViewController: UIViewController {
             self?.coordinator?.exit()
         })
         
-        // Убедимся, что алерт показывается на главном потоке
-        DispatchQueue.main.async {
-            self.present(alert, animated: true)
-        }
+        present(alert, animated: true)
     }
     
     @objc
     private func exportReport() {
-        print("Нажата кнопка экспорта") // Добавляем для отладки
-        
         switch settingsService.exportExpensesToCSV() {
         case .success(let fileURL):
-            // Создаем UIActivityViewController
             let activityVC = UIActivityViewController(
                 activityItems: [fileURL],
                 applicationActivities: nil
             )
             
-            // Показываем UIActivityViewController
             if let popoverController = activityVC.popoverPresentationController {
                 popoverController.sourceView = exportTableViewButton
                 popoverController.sourceRect = exportTableViewButton.bounds
@@ -139,7 +137,6 @@ final class SettingsViewController: UIViewController {
             
         case .failure(let error):
             print("Ошибка при создании CSV файла: \(error)")
-            // Показываем алерт с ошибкой
             let alert = UIAlertController(
                 title: "Ошибка",
                 message: "Не удалось создать файл отчета",
