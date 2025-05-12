@@ -138,37 +138,16 @@ final class AnalyticsViewController: UIViewController {
     
     // MARK: - Lifecycle
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        animateDonutChart()
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupBindings()
         setupObservers()
-        loadExpenses(for: dayToday, periodType: nil)
-    }
-    
-    private func setupObservers() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(expensesDidChange),
-            name: .expensesDidChange,
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(categoriesDidChange),
-            name: .categoriesDidChange,
-            object: nil
-        )
-    }
-    
-    @objc
-    private func expensesDidChange() {
-        loadExpenses(for: dayToday, periodType: nil)
-    }
-    
-    @objc
-    private func categoriesDidChange() {
         loadExpenses(for: dayToday, periodType: nil)
     }
     
@@ -222,7 +201,6 @@ final class AnalyticsViewController: UIViewController {
                 )
             }
         }
-        
         viewModel.updateExpensesByDate(expensesByDate)
         
         // Обновляем UI
@@ -344,11 +322,6 @@ final class AnalyticsViewController: UIViewController {
         })
     }
     
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        animateDonutChart()
-    }
-    
     // MARK: - Filter Methods
     
     private func setupFilterButtonState(for button: UIButton, with period: PeriodType) {
@@ -380,7 +353,6 @@ final class AnalyticsViewController: UIViewController {
     }
     
     private func updateUI() {
-        let filteredExpenses = viewModel.getFilteredExpenses()
         updateMoneyLabel(with: viewModel.totalAmount.value)
         updateDateLabel()
         reloadTable()
@@ -420,7 +392,6 @@ final class AnalyticsViewController: UIViewController {
                 selectedCategories.contains(expense.category.name)
             }
         }
-        
         return filteredExpenses
     }
     
@@ -587,6 +558,22 @@ final class AnalyticsViewController: UIViewController {
         updateDonutChart()
     }
     
+    private func setupObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(expensesDidChange),
+            name: .expensesDidChange,
+            object: nil
+        )
+        
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(categoriesDidChange),
+            name: .categoriesDidChange,
+            object: nil
+        )
+    }
+    
     private func resetPeriodButtons() {
         [dayButton, weekButton, monthButton, yearButton].forEach {
             $0.isSelected = false
@@ -651,6 +638,16 @@ final class AnalyticsViewController: UIViewController {
         // Убираем сброс периода при открытии календаря
         DateRangeCalendarView.show(in: self, delegate: self)
     }
+    
+    @objc
+    private func expensesDidChange() {
+        loadExpenses(for: dayToday, periodType: nil)
+    }
+    
+    @objc
+    private func categoriesDidChange() {
+        loadExpenses(for: dayToday, periodType: nil)
+    }
 }
 
 // MARK: - UITableViewDelegate, UITableViewDataSource
@@ -710,6 +707,7 @@ extension AnalyticsViewController: UITableViewDelegate, UITableViewDataSource {
 // MARK: - DateRangeCalendarViewDelegate
 
 extension AnalyticsViewController: DateRangeCalendarViewDelegate {
+    
     func didSelectDateRange(start: Date, end: Date) {
         // Только обновляем временный диапазон, не меняя основной
         viewModel.setTempDateRange((start, end))

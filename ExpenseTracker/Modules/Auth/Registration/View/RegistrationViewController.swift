@@ -2,9 +2,13 @@ import UIKit
 
 final class RegistrationViewController: UIViewController {
     
+    // MARK: - Properties
+    
     weak var coordinator: AuthCoordinator?
     private var customNavigationBar: CustomBackBarItem?
     private let registrationViewModel: RegistrationViewModel
+    
+    // MARK: - UI Components
     
     private let registrationStackView: UIStackView = {
         let stackView = UIStackView()
@@ -83,6 +87,8 @@ final class RegistrationViewController: UIViewController {
         return indicator
     }()
     
+    // MARK: - Initialization
+    
     init(viewModel: RegistrationViewModel) {
         self.registrationViewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -92,11 +98,17 @@ final class RegistrationViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         bindViewModel()
         setupUI()
     }
+    
+    // MARK: - Private Methods
+    
+    // MARK: - ViewModel Binding
     
     private func bindViewModel() {
         registrationViewModel.isLoading.bind { [weak self] isLoading in
@@ -159,6 +171,8 @@ final class RegistrationViewController: UIViewController {
             }
         }
     }
+    
+    // MARK: - UI Setup
     
     private func setupUI() {
         view.backgroundColor = .etBackground
@@ -271,6 +285,8 @@ final class RegistrationViewController: UIViewController {
         repeatPasswordTextField.textField.addTarget(self, action: #selector(repeatPasswordTextEditing), for: .editingChanged)
         repeatPasswordTextField.textField.addTarget(self, action: #selector(repeatPasswordTextDidEndEditing), for: .editingDidEnd)
     }
+    
+    // MARK: - Actions
     
     @objc
     private func loginTextFieldEditing() {

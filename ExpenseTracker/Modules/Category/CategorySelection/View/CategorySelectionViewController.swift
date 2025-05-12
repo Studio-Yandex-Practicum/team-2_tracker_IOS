@@ -197,8 +197,13 @@ final class CategorySelectionViewController: UIViewController {
             let isLast = indexPath.row == filteredCategories.count - 1
             cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
             
-            if indexPath.row == categories.count - 1 {
-                cell.configure(with: filteredCategories[indexPath.row], isFirst: isFirst, isLast: isLast)
+            // Обновляем скругление углов для последней ячейки
+            if isLast {
+                cell.layer.cornerRadius = 12
+                cell.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+            } else {
+                cell.layer.cornerRadius = 0
+                cell.layer.maskedCorners = []
             }
         }
     }
@@ -343,6 +348,15 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
         let category = filteredCategories[indexPath.row]
         cell.configure(with: category, isFirst: isFirst, isLast: isLast)
         
+        // Обновляем скругление углов
+        if isLast {
+            cell.layer.cornerRadius = 12
+            cell.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        } else {
+            cell.layer.cornerRadius = 0
+            cell.layer.maskedCorners = []
+        }
+        
         // Если выбраны все категории, не отмечаем отдельные ячейки
         if !isSelectionFlow && !checkmarkImageView.isHidden {
             cell.isCellSelected = false
@@ -455,7 +469,7 @@ extension CategorySelectionViewController: UITableViewDelegate, UITableViewDataS
                             
                             // Обновляем таблицу
                             tableView.deleteRows(at: [indexPath], with: .fade)
-                            
+                            reloadCells()
                             // Если удалили выбранную категорию, сбрасываем выбор
                             if self.selectedIndexPath == indexPath {
                                 self.selectedIndexPath = nil

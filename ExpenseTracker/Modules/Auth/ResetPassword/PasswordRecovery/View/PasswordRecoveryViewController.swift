@@ -2,9 +2,13 @@ import UIKit
 
 final class PasswordRecoveryViewController: UIViewController {
     
+    // MARK: - Properties
+    
     weak var coordinator: AuthCoordinator?
     private var customNavigationBar: CustomBackBarItem?
     private let viewModel: PasswordRecoveryViewModel
+    
+    // MARK: - UI Components
     
     private let emailTextField: AuthTextFieldWithHint = {
         let textField = AuthTextField(placeholder: AuthAction.mail.rawValue)
@@ -26,6 +30,8 @@ final class PasswordRecoveryViewController: UIViewController {
         return indicator
     }()
     
+    // MARK: - Initialization
+    
     init(viewModel: PasswordRecoveryViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
@@ -35,10 +41,16 @@ final class PasswordRecoveryViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
     }
+    
+    // MARK: - Private Methods
+    
+    // MARK: - UI Setup
     
     private func setupUI() {
         view.backgroundColor = .etBackground
@@ -50,6 +62,8 @@ final class PasswordRecoveryViewController: UIViewController {
         setupSendButton()
         setupTapGesture()
     }
+    
+    // MARK: - ViewModel Binding
     
     private func bindViewModel() {
         viewModel.letterWasSent.bind { [weak self] letterWasSent in
@@ -125,6 +139,8 @@ final class PasswordRecoveryViewController: UIViewController {
             sendButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16)
         ])
     }
+    
+    // MARK: - Actions
     
     @objc
     private func showAuthFlow() {

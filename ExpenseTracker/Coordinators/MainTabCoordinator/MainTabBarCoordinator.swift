@@ -46,6 +46,7 @@ final class MainTabBarCoordinator: Coordinator {
 
 // Реализация протокола SettingsCoordinatorDelegate
 extension MainTabBarCoordinator: SettingsCoordinatorDelegate {
+    
     func didRequestLogout() {
         delegate?.didRequestRestart()
     }

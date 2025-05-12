@@ -26,6 +26,7 @@ final class AnalyticsCoordinator: Coordinator {
 }
 
 extension AnalyticsCoordinator: TabCoordinator {
+    
     var tabItem: TabItem { .analytics }
     
     private func configureTabBarItem() {

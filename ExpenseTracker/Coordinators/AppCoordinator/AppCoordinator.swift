@@ -73,6 +73,7 @@ extension AppCoordinator: AuthCoordinatorDelegate {
 
 // Реализация протокола AppCoordinatorDelegate
 extension AppCoordinator: AppCoordinatorDelegate {
+    
     func didRequestRestart() {
         // Очищаем все дочерние координаторы
         childCoordinators.removeAll()

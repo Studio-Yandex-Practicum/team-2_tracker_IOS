@@ -95,7 +95,7 @@ final class AnalyticsTableCell: UITableViewCell {
         selectionStyle = .none
         translatesAutoresizingMaskIntoConstraints = true
         
-        var constraints = [
+        let constraints = [
             backView.topAnchor.constraint(equalTo: contentView.topAnchor),
             backView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
             backView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
@@ -188,7 +188,6 @@ final class AnalyticsTableCell: UITableViewCell {
             percentMoney.isHidden = false
             
             if let percentage = viewModel.percentage {
-                // Округляем процент по правилам математического округления
                 let roundedPercentage = Int(round(percentage))
                 percentMoney.text = "\(roundedPercentage)%"
             } else {

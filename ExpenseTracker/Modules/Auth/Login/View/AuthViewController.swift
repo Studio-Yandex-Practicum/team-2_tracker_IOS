@@ -2,9 +2,13 @@ import UIKit
 
 final class AuthViewController: UIViewController {
     
+    // MARK: - Properties
+    
     weak var coordinator: AuthCoordinator?
     private let authViewModel: AuthViewModel
 
+    // MARK: - UI Components
+    
     private let authStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
@@ -76,6 +80,8 @@ final class AuthViewController: UIViewController {
         button.setContentHuggingPriority(.required, for: .horizontal)
         return button
     }()
+    
+    // MARK: - Initialization
             
     init(viewModel: AuthViewModel) {
         self.authViewModel = viewModel
@@ -86,11 +92,17 @@ final class AuthViewController: UIViewController {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // MARK: - Lifecycle
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         bindViewModel()
         setupUI()
     }
+    
+    // MARK: - Private Methods
+    
+    // MARK: - ViewModel Binding
     
     private func bindViewModel() {
         authViewModel.isLoading.bind { [weak self] isLoading in
@@ -134,6 +146,8 @@ final class AuthViewController: UIViewController {
             }
         }
     }
+    
+    // MARK: - UI Setup
     
     private func setupUI() {
         view.backgroundColor = .etBackground
@@ -199,6 +213,8 @@ final class AuthViewController: UIViewController {
         forgotPasswordButton.addTarget(self, action: #selector(showPasswordRecover), for: .touchUpInside)
         footerButton.addTarget(self, action: #selector(showRegistrationView), for: .touchUpInside)
     }
+    
+    // MARK: - Actions
     
     @objc
     private func showPasswordRecover() {

@@ -2,6 +2,7 @@ import Foundation
 import UIKit
 
 final class AnalyticsViewModel {
+    
     // MARK: - Observable Properties
     
     let totalAmount = Observable<Decimal>(0)
