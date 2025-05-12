@@ -14,13 +14,4 @@ target 'ExpenseTracker' do
   # Firebase
   pod 'FirebaseAuth'
 
-  target 'ExpenseTrackerTests' do
-    inherit! :search_paths
-    # Pods for testing
-  end
-
-  target 'ExpenseTrackerUITests' do
-    # Pods for testing
-  end
-
 end
