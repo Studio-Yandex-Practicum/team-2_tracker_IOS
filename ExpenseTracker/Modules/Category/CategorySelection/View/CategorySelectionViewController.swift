@@ -61,7 +61,7 @@ final class CategorySelectionViewController: UIViewController {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         imageView.image = UIImage(named: Asset.Icon.checkboxPressed.rawValue)
-        imageView.isHidden = true
+        imageView.isHidden = false
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
     }()

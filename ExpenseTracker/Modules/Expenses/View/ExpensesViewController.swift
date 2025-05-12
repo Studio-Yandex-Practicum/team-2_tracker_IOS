@@ -783,7 +783,7 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
 extension ExpensesViewController: ChangeExpensesDelegate {
     func createExpense(_ newExpense: Expense) {
         viewModel.addExpense(
-            expense: newExpense.expense,
+            expense: newExpense,
             category: CategoryMain(title: newExpense.category.name, icon: newExpense.category.icon),
             date: newExpense.date
         )
@@ -812,6 +812,7 @@ extension ExpensesViewController: CategorySelectionDelegate {
     
     func didSelectCategories(_ categories: Set<String>) {
         selectedCategories = categories
+        categoryButton.setImage((UIImage(named: Asset.Icon.filters.rawValue)?.withTintColor(.etAccent)), for: .normal)
         filterExpenses()
     }
     

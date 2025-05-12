@@ -2,9 +2,20 @@ import UIKit
 
 final class SettingsViewController: UIViewController {
     
-    weak var coordinator: SettingsCoordinator?
+    // MARK: - Properties
     
+    weak var coordinator: SettingsCoordinator?
+    private let settingsService: SettingsService
     private var customNavigationBar: CustomBackBarItem?
+    
+    init() {
+        self.settingsService = SettingsService()
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     // MARK: - UI Elements
     
@@ -16,6 +27,39 @@ final class SettingsViewController: UIViewController {
         dateLabel.font = AppTextStyle.h2.font
         dateLabel.translatesAutoresizingMaskIntoConstraints = false
         return dateLabel
+    }()
+    
+    private lazy var exportButton: SettingTableViewButton = {
+        let button = SettingTableViewButton(title: "Экспорт данных")
+        button.layer.cornerRadius = 12
+        button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        return button
+    }()
+    
+    private lazy var themeContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = .etBackground
+        view.layer.cornerRadius = 12
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+    
+    private lazy var themeLabel: UILabel = {
+        let label = UILabel()
+        label.text = "Темная тема"
+        label.textColor = .etPrimaryLabel
+        label.font = .systemFont(ofSize: 16)
+        label.translatesAutoresizingMaskIntoConstraints = false
+        return label
+    }()
+    
+    private lazy var themeSwitch: UISwitch = {
+        let switchControl = UISwitch()
+        switchControl.onTintColor = .systemBlue
+        switchControl.isOn = traitCollection.userInterfaceStyle == .dark
+        switchControl.addTarget(self, action: #selector(themeSwitchChanged), for: .valueChanged)
+        switchControl.translatesAutoresizingMaskIntoConstraints = false
+        return switchControl
     }()
     
     private  lazy var logoutTableViewButton: SettingTableViewButton = {
@@ -60,28 +104,47 @@ final class SettingsViewController: UIViewController {
     }
 
     private func setupViews() {
-        
         navigationController?.setNavigationBarHidden(true, animated: false)
         view.addSubview(settingsLabel)
+        view.addSubview(exportButton)
+        view.addSubview(themeContainer)
+        themeContainer.addSubview(themeLabel)
+        themeContainer.addSubview(themeSwitch)
         view.addSubview(logoutTableViewButton)
         view.addSubview(settingTableViewController)
         
-//        [settingTableViewController, logoutTableViewButton].forEach {
-//            view.addSubview($0)
-//        }
+        // Добавляем обработчик нажатия для кнопки экспорта
+        exportButton.addTarget(self, action: #selector(exportReport), for: .touchUpInside)
         
         NSLayoutConstraint.activate([
             settingsLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             settingsLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
-            settingTableViewController.topAnchor.constraint(equalTo: settingsLabel.bottomAnchor, constant: 16),
-            settingTableViewController.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            settingTableViewController.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            exportButton.topAnchor.constraint(equalTo: settingsLabel.bottomAnchor, constant: 16),
+            exportButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            exportButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            exportButton.heightAnchor.constraint(equalToConstant: 48),
             
-            logoutTableViewButton.topAnchor.constraint(equalTo: settingsLabel.bottomAnchor, constant: 16),
+            themeContainer.topAnchor.constraint(equalTo: exportButton.bottomAnchor),
+            themeContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            themeContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            themeContainer.heightAnchor.constraint(equalToConstant: 48),
+            
+            themeLabel.leadingAnchor.constraint(equalTo: themeContainer.leadingAnchor, constant: 16),
+            themeLabel.centerYAnchor.constraint(equalTo: themeContainer.centerYAnchor),
+            
+            themeSwitch.trailingAnchor.constraint(equalTo: themeContainer.trailingAnchor, constant: -16),
+            themeSwitch.centerYAnchor.constraint(equalTo: themeContainer.centerYAnchor),
+            
+            logoutTableViewButton.topAnchor.constraint(equalTo: themeContainer.bottomAnchor),
             logoutTableViewButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             logoutTableViewButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
-            logoutTableViewButton.heightAnchor.constraint(equalToConstant: 48)
+            logoutTableViewButton.heightAnchor.constraint(equalToConstant: 48),
+            
+            settingTableViewController.topAnchor.constraint(equalTo: logoutTableViewButton.bottomAnchor, constant: 16),
+            settingTableViewController.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            settingTableViewController.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            settingTableViewController.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -16)
         ])
     }
 
@@ -100,6 +163,49 @@ final class SettingsViewController: UIViewController {
         })
         
         present(alert, animated: true)
+    }
+    
+    @objc
+    private func themeSwitchChanged(_ sender: UISwitch) {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            windowScene.windows.forEach { window in
+                window.overrideUserInterfaceStyle = sender.isOn ? .dark : .light
+            }
+        }
+        themeLabel.text = sender.isOn ? "Темная тема" : "Светлая тема"
+    }
+    
+    @objc
+    private func exportReport() {
+        print("Нажата кнопка экспорта") // Добавляем для отладки
+        
+        switch settingsService.exportExpensesToCSV() {
+        case .success(let fileURL):
+            // Создаем UIActivityViewController
+            let activityVC = UIActivityViewController(
+                activityItems: [fileURL],
+                applicationActivities: nil
+            )
+            
+            // Показываем UIActivityViewController
+            if let popoverController = activityVC.popoverPresentationController {
+                popoverController.sourceView = exportButton
+                popoverController.sourceRect = exportButton.bounds
+            }
+            
+            present(activityVC, animated: true)
+            
+        case .failure(let error):
+            print("Ошибка при создании CSV файла: \(error)")
+            // Показываем алерт с ошибкой
+            let alert = UIAlertController(
+                title: "Ошибка",
+                message: "Не удалось создать файл отчета",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
     }
 }
 // MARK: - UITableViewDelegate & UITableViewDataSource

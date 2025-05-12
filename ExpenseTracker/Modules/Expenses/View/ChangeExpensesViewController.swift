@@ -149,6 +149,8 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         updatePlaceholderVisibility()
         setupNote()
         setupSaveCategoryButton()
+        setupGestures()
+        setupTapGesture()
         
         // Если есть расход для редактирования, заполняем поля
         if let expense = expenseToEdit {
