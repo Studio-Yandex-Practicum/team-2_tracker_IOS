@@ -12,7 +12,17 @@ final class ExpensesViewController: UIViewController {
     
     private var expensesByDate: [Date: [ExpenseModel]] = [:]
     private var selectedCategories: Set<String>?
-    private var selectedDateRange: (start: Date, end: Date)?
+    private var selectedDateRange: (start: Date, end: Date)? {
+        didSet {
+            if let dateRange = selectedDateRange {
+                UserDefaults.standard.set(dateRange.start.timeIntervalSince1970, forKey: "selectedDateRangeStart")
+                UserDefaults.standard.set(dateRange.end.timeIntervalSince1970, forKey: "selectedDateRangeEnd")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "selectedDateRangeStart")
+                UserDefaults.standard.removeObject(forKey: "selectedDateRangeEnd")
+            }
+        }
+    }
     private var tempDateRange: (start: Date, end: Date)?
     private var selectedCategory: CategoryMain?
     
@@ -146,6 +156,16 @@ final class ExpensesViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .etBackground
         
+        // Очищаем все сохраненные фильтры при запуске приложения
+        UserDefaults.standard.removeObject(forKey: "selectedCategories")
+        UserDefaults.standard.removeObject(forKey: "calendarSelectedStartDate")
+        UserDefaults.standard.removeObject(forKey: "calendarSelectedEndDate")
+        UserDefaults.standard.removeObject(forKey: "isAllCategoriesSelected")
+        
+        // Сбрасываем выбранные категории и период
+        selectedCategories = nil
+        selectedDateRange = nil
+        
         // Настраиваем обработчики изменений
         viewModel.onExpensesDidChange = { [weak self] in
             self?.updateUI()
@@ -203,6 +223,10 @@ final class ExpensesViewController: UIViewController {
             }
             setFilters(for: button, with: period)
         }
+        
+        // Очищаем сохраненный период в календаре при выборе любой кнопки периода
+        UserDefaults.standard.removeObject(forKey: "calendarSelectedStartDate")
+        UserDefaults.standard.removeObject(forKey: "calendarSelectedEndDate")
     }
     
     private func setFilters(for button: UIButton, with period: PeriodType) {
@@ -538,6 +562,19 @@ final class ExpensesViewController: UIViewController {
             }
         }
     }
+    
+    private func updateCategoryButtonAppearance() {
+        // Проверяем состояние "все категории" из UserDefaults
+        let isAllCategoriesSelected = UserDefaults.standard.bool(forKey: "isAllCategoriesSelected")
+        
+        if isAllCategoriesSelected {
+            categoryButton.setImage(UIImage(named: Asset.Icon.filters.rawValue)?.withTintColor(.etPrimaryLabel), for: .normal)
+            categoryButton.setTitle("Категории", for: .normal)
+        } else {
+            categoryButton.setImage(UIImage(named: Asset.Icon.filters.rawValue)?.withTintColor(.etAccent), for: .normal)
+            categoryButton.setTitle("Категории", for: .normal)
+        }
+    }
 }
 
 // MARK: - TableView Functhion
@@ -783,7 +820,7 @@ extension ExpensesViewController: DateRangeCalendarViewDelegate {
 extension ExpensesViewController: ChangeExpensesDelegate {
     func createExpense(_ newExpense: Expense) {
         viewModel.addExpense(
-            expense: newExpense.expense,
+            expense: newExpense,
             category: CategoryMain(title: newExpense.category.name, icon: newExpense.category.icon),
             date: newExpense.date
         )
@@ -812,6 +849,8 @@ extension ExpensesViewController: CategorySelectionDelegate {
     
     func didSelectCategories(_ categories: Set<String>) {
         selectedCategories = categories
+        categoryButton.setImage((UIImage(named: Asset.Icon.filters.rawValue)?.withTintColor(.etAccent)), for: .normal)
+        updateCategoryButtonAppearance()
         filterExpenses()
     }
     

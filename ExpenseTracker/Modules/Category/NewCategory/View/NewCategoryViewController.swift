@@ -94,6 +94,7 @@ final class NewCategoryViewController: UIViewController {
         setupNewCategoryStackView()
         setupSaveButton()
         setupSaveCategoryButton()
+        setupTapGesture()
     }
 
     private func setupNavBar() {

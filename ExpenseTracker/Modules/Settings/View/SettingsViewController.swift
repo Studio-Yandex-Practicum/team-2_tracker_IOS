@@ -2,9 +2,20 @@ import UIKit
 
 final class SettingsViewController: UIViewController {
     
-    weak var coordinator: SettingsCoordinator?
+    // MARK: - Properties
     
+    weak var coordinator: SettingsCoordinator?
+    private let settingsService: SettingsService
     private var customNavigationBar: CustomBackBarItem?
+    
+    init() {
+        self.settingsService = SettingsService()
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     // MARK: - UI Elements
     
@@ -18,19 +29,19 @@ final class SettingsViewController: UIViewController {
         return dateLabel
     }()
     
-    private  lazy var themetTableViewButton: SettingThemeTableViewButton = {
+    private lazy var themetTableViewButton: SettingThemeTableViewButton = {
         let button = SettingThemeTableViewButton(title: SettingsLabel.theme.rawValue)
         button.layer.cornerRadius = 12
         button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         return button
     }()
     
-    private  lazy var exportTableViewButton: SettingExportTableViewButton = {
+    private lazy var exportTableViewButton: SettingExportTableViewButton = {
         let button = SettingExportTableViewButton(title: SettingsLabel.exportReport.rawValue)
         return button
     }()
     
-    private  lazy var logoutTableViewButton: SettingLogoutTableViewButton = {
+    private lazy var logoutTableViewButton: SettingLogoutTableViewButton = {
         let button = SettingLogoutTableViewButton(title: SettingsLabel.logout.rawValue)
         button.layer.cornerRadius = 12
         button.layer.maskedCorners = [ .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
@@ -48,17 +59,12 @@ final class SettingsViewController: UIViewController {
         view.backgroundColor = .etBackground
 
         setupViews()
-        setupThemeTableViewButton()
         setupExportTableViewButton()
         setupLogoutTableViewButton()
     }
     
-    private func setupThemeTableViewButton() {
-        logoutTableViewButton.addTarget(self, action: #selector(changeThemeApp), for: .touchUpInside)
-    }
-    
     private func setupExportTableViewButton() {
-        logoutTableViewButton.addTarget(self, action: #selector(exportApp), for: .touchUpInside)
+        exportTableViewButton.addTarget(self, action: #selector(exportReport), for: .touchUpInside)
     }
     
     private func setupLogoutTableViewButton() {
@@ -66,7 +72,6 @@ final class SettingsViewController: UIViewController {
     }
 
     private func setupViews() {
-        
         navigationController?.setNavigationBarHidden(true, animated: false)
         view.addSubview(settingsLabel)
         view.addSubview(themetTableViewButton)
@@ -95,16 +100,6 @@ final class SettingsViewController: UIViewController {
     }
     
     @objc
-    private func changeThemeApp() {
-        print("changeThemeApp")
-    }
-
-    @objc
-    private func exportApp() {
-        print("exportApp")
-    }
-    
-    @objc
     private func logoutApp() {
         let alert = UIAlertController(
             title: "Выход из аккаунта",
@@ -117,6 +112,41 @@ final class SettingsViewController: UIViewController {
             self?.coordinator?.exit()
         })
         
-        present(alert, animated: true)
+        // Убедимся, что алерт показывается на главном потоке
+        DispatchQueue.main.async {
+            self.present(alert, animated: true)
+        }
+    }
+    
+    @objc
+    private func exportReport() {
+        print("Нажата кнопка экспорта") // Добавляем для отладки
+        
+        switch settingsService.exportExpensesToCSV() {
+        case .success(let fileURL):
+            // Создаем UIActivityViewController
+            let activityVC = UIActivityViewController(
+                activityItems: [fileURL],
+                applicationActivities: nil
+            )
+            
+            // Показываем UIActivityViewController
+            if let popoverController = activityVC.popoverPresentationController {
+                popoverController.sourceView = exportTableViewButton
+                popoverController.sourceRect = exportTableViewButton.bounds
+            }
+            present(activityVC, animated: true)
+            
+        case .failure(let error):
+            print("Ошибка при создании CSV файла: \(error)")
+            // Показываем алерт с ошибкой
+            let alert = UIAlertController(
+                title: "Ошибка",
+                message: "Не удалось создать файл отчета",
+                preferredStyle: .alert
+            )
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
     }
 }

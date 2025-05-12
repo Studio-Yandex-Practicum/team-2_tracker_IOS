@@ -149,6 +149,8 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         updatePlaceholderVisibility()
         setupNote()
         setupSaveCategoryButton()
+        setupGestures()
+        setupTapGesture()
         
         // Если есть расход для редактирования, заполняем поля
         if let expense = expenseToEdit {
@@ -168,14 +170,45 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
     
     @objc
     private func cancelButtonAction() {
-        let alert = UIAlertController(title: "Уверены, что хотите выйти?", message: "При выходе данные не будут сохранены", preferredStyle: .alert)
+        // Проверяем, есть ли заполненные поля
+        let hasFilledFields = hasAnyFilledFields()
         
-        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel, handler: nil))
-        alert.addAction(UIAlertAction(title: "Выйти", style: .default) { _ in
+        if hasFilledFields {
+            let alert = UIAlertController(
+                title: "Уверены, что хотите выйти?",
+                message: "При выходе данные не будут сохранены",
+                preferredStyle: .alert
+            )
             
-            self.navigationController?.popToRootViewController(animated: true)
-        })
-        present(alert, animated: true) 
+            alert.addAction(UIAlertAction(title: "Отмена", style: .cancel, handler: nil))
+            alert.addAction(UIAlertAction(title: "Выйти", style: .default) { _ in
+                self.navigationController?.popToRootViewController(animated: true)
+            })
+            present(alert, animated: true)
+        } else {
+            // Если поля не заполнены, просто возвращаемся назад
+            navigationController?.popToRootViewController(animated: true)
+        }
+    }
+    
+    // Проверка заполненных полей
+    private func hasAnyFilledFields() -> Bool {
+        // Проверяем сумму
+        if let amount = addMoney.text, !amount.isEmpty && amount != "0" {
+            return true
+        }
+        
+        // Проверяем категорию
+        if let category = changeCategory.categoryLabel.text, !category.isEmpty {
+            return true
+        }
+        
+        // Проверяем заметку
+        if !addNote.text.isEmpty {
+            return true
+        }
+        
+        return false
     }
     
     @objc
@@ -198,14 +231,21 @@ final class ChangeExpensesViewController: UIViewController, UITextViewDelegate {
         view.addSubview(saveButton)
     }
     
-    // MARK: func addNote
+    // MARK: - UITextViewDelegate
+    
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        updatePlaceholderVisibility()
+    }
+    
+    func textViewDidEndEditing(_ textView: UITextView) {
+        updatePlaceholderVisibility()
+    }
     
     func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderVisibility()
     }
     
     func updatePlaceholderVisibility() {
-        // Показываем плейсхолдер, если текст пустой
         placeholderLabel.isHidden = !addNote.text.isEmpty
     }
     

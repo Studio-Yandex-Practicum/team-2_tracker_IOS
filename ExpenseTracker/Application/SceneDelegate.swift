@@ -13,6 +13,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         self.window = window
         
+        // Применяем сохраненную тему
+        let isDarkTheme = UserDefaults.standard.bool(forKey: "isDarkTheme")
+        window.overrideUserInterfaceStyle = isDarkTheme ? .dark : .light
+        
         appCoordinator = AppCoordinator(window: window, isLoggedIn: isLoggedIn)
         appCoordinator?.start()
     }

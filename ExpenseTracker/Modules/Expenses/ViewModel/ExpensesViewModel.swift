@@ -51,7 +51,7 @@ final class ExpensesViewModel: NSObject {
         }
     }
     
-    func addExpense(expense: Decimal, category: CategoryMain, date: Date) {
+    func addExpense(expense: Expense, category: CategoryMain, date: Date) {
         // Ищем существующую категорию в базе
         let fetchRequest: NSFetchRequest<CategoryModel> = CategoryModel.fetchRequest()
         fetchRequest.predicate = NSPredicate(format: "name == %@ AND icon == %@ AND userID == %@", 
@@ -77,9 +77,9 @@ final class ExpensesViewModel: NSObject {
             }
             
             expenseService.createExpense(
-                amount: expense,
+                amount: expense.expense,
                 date: date,
-                note: "",
+                note: expense.note,
                 category: categoryModel
             )
             NotificationCenter.default.post(name: .expensesDidChange, object: nil)

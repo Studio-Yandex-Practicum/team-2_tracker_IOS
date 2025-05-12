@@ -77,7 +77,10 @@ extension AppCoordinator: AppCoordinatorDelegate {
         // Очищаем все дочерние координаторы
         childCoordinators.removeAll()
         
+        // Очищаем текущий rootViewController
+        window.rootViewController = nil
+        
         // Показываем поток авторизации
-        start()
+        showAuthFlow()
     }
 }

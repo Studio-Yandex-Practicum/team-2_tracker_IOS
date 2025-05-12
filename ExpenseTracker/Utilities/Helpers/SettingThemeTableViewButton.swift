@@ -43,12 +43,13 @@ final class SettingThemeTableViewButton: UIButton {
         return image
     }()
     
-    private let buttonSwitch: UISwitch = {
+    private lazy var buttonSwitch: UISwitch = {
         let swith = UISwitch()
         swith.isOn = ThemeApp.day.swithOn
         swith.onTintColor = .etAccent
         swith.accessibilityIgnoresInvertColors = true
         swith.isAccessibilityElement = true
+        swith.addTarget(self, action: #selector(themeSwitchChanged), for: .valueChanged)
         swith.translatesAutoresizingMaskIntoConstraints = false
         return swith
     }()
@@ -87,6 +88,14 @@ final class SettingThemeTableViewButton: UIButton {
     // MARK: - Layout
     
     private func setupUI() {
+        // Загружаем сохраненную тему
+        let isDarkTheme = UserDefaults.standard.bool(forKey: "isDarkTheme")
+        buttonSwitch.isOn = isDarkTheme
+        
+        // Устанавливаем правильную иконку при инициализации
+        let theme = isDarkTheme ? ThemeApp.night : ThemeApp.day
+        dayNighteImage.image = UIImage(named: theme.saveButtonText)?.withTintColor(.etCards)
+        
         backgroundColor = .etCardsToggled
         layer.cornerRadius = 12
         layer.masksToBounds = true
@@ -115,5 +124,22 @@ final class SettingThemeTableViewButton: UIButton {
             separator.bottomAnchor.constraint(equalTo: bottomAnchor),
             separator.heightAnchor.constraint(equalToConstant: 1)
         ])
+    }
+    
+    @objc
+    private func themeSwitchChanged() {
+        // Сохраняем выбранную тему в UserDefaults
+        UserDefaults.standard.set(buttonSwitch.isOn, forKey: "isDarkTheme")
+        UserDefaults.standard.synchronize()
+        
+        // Обновляем иконку
+        let theme = buttonSwitch.isOn ? ThemeApp.night : ThemeApp.day
+        dayNighteImage.image = UIImage(named: theme.saveButtonText)?.withTintColor(.etCards)
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            windowScene.windows.forEach { window in
+                window.overrideUserInterfaceStyle = buttonSwitch.isOn ? .dark : .light
+            }
+        }
     }
 }
