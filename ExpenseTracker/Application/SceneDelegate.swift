@@ -9,7 +9,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
-        let isLoggedIn = Auth.auth().currentUser != nil // Проверка текущей сессии пользователя
         let window = UIWindow(windowScene: windowScene)
         self.window = window
         
@@ -17,7 +16,21 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let isDarkTheme = UserDefaults.standard.bool(forKey: "isDarkTheme")
         window.overrideUserInterfaceStyle = isDarkTheme ? .dark : .light
         
-        appCoordinator = AppCoordinator(window: window, isLoggedIn: isLoggedIn)
-        appCoordinator?.start()
+        // Показываем экран загрузки или сплеш-скрин
+        let loadingViewController = UIViewController()
+        loadingViewController.view.backgroundColor = .etBackground
+        window.rootViewController = loadingViewController
+        window.makeKeyAndVisible()
+        
+        // Проверяем авторизацию асинхронно
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let isLoggedIn = Auth.auth().currentUser != nil
+            
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.appCoordinator = AppCoordinator(window: window, isLoggedIn: isLoggedIn)
+                self.appCoordinator?.start()
+            }
+        }
     }
 }
