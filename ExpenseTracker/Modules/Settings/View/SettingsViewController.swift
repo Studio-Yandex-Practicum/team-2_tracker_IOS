@@ -18,25 +18,23 @@ final class SettingsViewController: UIViewController {
         return dateLabel
     }()
     
-    private  lazy var logoutTableViewButton: SettingTableViewButton = {
-        let button = SettingTableViewButton(title: SettingsLabel.logout.rawValue)
+    private  lazy var themetTableViewButton: SettingThemeTableViewButton = {
+        let button = SettingThemeTableViewButton(title: SettingsLabel.theme.rawValue)
         button.layer.cornerRadius = 12
-     //   button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner, .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        button.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         return button
     }()
     
-    private lazy var settingTableViewController: UITableView = {
-        let tableView = UITableView()
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.layer.cornerRadius = 12
-     //   tableView.separatorStyle = .none
-        tableView.backgroundColor = .etBackground
-        tableView.contentInset = UIEdgeInsets(top: 26, left: 0, bottom: 0, right: 0)
-        tableView.showsVerticalScrollIndicator = false
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        return tableView
+    private  lazy var exportTableViewButton: SettingExportTableViewButton = {
+        let button = SettingExportTableViewButton(title: SettingsLabel.exportReport.rawValue)
+        return button
+    }()
+    
+    private  lazy var logoutTableViewButton: SettingLogoutTableViewButton = {
+        let button = SettingLogoutTableViewButton(title: SettingsLabel.logout.rawValue)
+        button.layer.cornerRadius = 12
+        button.layer.maskedCorners = [ .layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        return button
     }()
     
     override func viewDidLoad() {
@@ -44,18 +42,26 @@ final class SettingsViewController: UIViewController {
         setupUI()
     }
 
-    
     // MARK: - Private Methods
     
     private func setupUI() {
         view.backgroundColor = .etBackground
 
         setupViews()
-        setupCategoryTableViewButton()
+        setupThemeTableViewButton()
+        setupExportTableViewButton()
+        setupLogoutTableViewButton()
     }
-
     
-    private func setupCategoryTableViewButton() {
+    private func setupThemeTableViewButton() {
+        logoutTableViewButton.addTarget(self, action: #selector(changeThemeApp), for: .touchUpInside)
+    }
+    
+    private func setupExportTableViewButton() {
+        logoutTableViewButton.addTarget(self, action: #selector(exportApp), for: .touchUpInside)
+    }
+    
+    private func setupLogoutTableViewButton() {
         logoutTableViewButton.addTarget(self, action: #selector(logoutApp), for: .touchUpInside)
     }
 
@@ -63,28 +69,40 @@ final class SettingsViewController: UIViewController {
         
         navigationController?.setNavigationBarHidden(true, animated: false)
         view.addSubview(settingsLabel)
+        view.addSubview(themetTableViewButton)
+        view.addSubview(exportTableViewButton)
         view.addSubview(logoutTableViewButton)
-        view.addSubview(settingTableViewController)
-        
-//        [settingTableViewController, logoutTableViewButton].forEach {
-//            view.addSubview($0)
-//        }
-        
+
         NSLayoutConstraint.activate([
             settingsLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 8),
             settingsLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             
-            settingTableViewController.topAnchor.constraint(equalTo: settingsLabel.bottomAnchor, constant: 16),
-            settingTableViewController.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
-            settingTableViewController.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            themetTableViewButton.topAnchor.constraint(equalTo: settingsLabel.bottomAnchor, constant: 16),
+            themetTableViewButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            themetTableViewButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            themetTableViewButton.heightAnchor.constraint(equalToConstant: 48),
             
-            logoutTableViewButton.topAnchor.constraint(equalTo: settingsLabel.bottomAnchor, constant: 16),
+            exportTableViewButton.topAnchor.constraint(equalTo: themetTableViewButton.bottomAnchor, constant: 1),
+            exportTableViewButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            exportTableViewButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
+            exportTableViewButton.heightAnchor.constraint(equalToConstant: 48),
+            
+            logoutTableViewButton.topAnchor.constraint(equalTo: exportTableViewButton.bottomAnchor, constant: 1),
             logoutTableViewButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             logoutTableViewButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -16),
             logoutTableViewButton.heightAnchor.constraint(equalToConstant: 48)
         ])
     }
+    
+    @objc
+    private func changeThemeApp() {
+        print("changeThemeApp")
+    }
 
+    @objc
+    private func exportApp() {
+        print("exportApp")
+    }
     
     @objc
     private func logoutApp() {
@@ -102,85 +120,3 @@ final class SettingsViewController: UIViewController {
         present(alert, animated: true)
     }
 }
-// MARK: - UITableViewDelegate & UITableViewDataSource
-
-extension SettingsViewController: UITableViewDelegate, UITableViewDataSource {
-    
-    // MARK: - UITableView DataSource
-    
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
-    }
-    
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        10
-    }
-    
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let cell = tableView.dequeueReusableCell(withIdentifier: "cell") else {
-            return UITableViewCell()
-        }
-       
-        return cell
-    }
-    
-    // MARK: - UITableView Delegate
-    
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 48
-    }
-    
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        return 0
-    }
-    
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        return 0
-    }
-    
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        return nil
-    }
-    
-    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        return nil
-    }
-    
-//    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-//        guard let cell = tableView.cellForRow(at: indexPath) as? CategorySelectionCell else {
-//            return
-//        }
-//        selectedIndexPath = indexPath
-//        
-//        let categoryTitle = categories[indexPath.row].title
-//        let categoryIcon = categories[indexPath.row].icon
-//        categoryForExpense = CategoryMain(title: categoryTitle, icon: categoryIcon)
-//        
-//        if !checkmarkImageView.isHidden {
-//            selectedCategories = []
-//        }
-//        checkmarkImageView.isHidden = true
-//        
-//        let selectedCategory = categories[indexPath.row]
-//        selectedCategories.insert(selectedCategory.title)
-//        cell.isCellSelected.toggle()
-//        updateSetButtonState()
-//    }
-    
-//    func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-//        guard let cell = tableView.cellForRow(at: indexPath) as? CategorySelectionCell else {
-//            return
-//        }
-//        let selectedCategory = categories[indexPath.row]
-//        
-//        if isSelectionFlow {
-//            cell.isCellSelected = false
-//        } else {
-//            selectedCategories.remove(selectedCategory.title)
-//            cell.isCellSelected.toggle()
-//            updateSetButtonState()
-//        }
-//    }
-}
-
-

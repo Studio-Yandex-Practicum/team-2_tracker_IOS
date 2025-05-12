@@ -1,6 +1,6 @@
 import UIKit
 
-final class SettingTableViewButton: UIButton {
+final class SettingLogoutTableViewButton: UIButton {
     
     // MARK: - UI
     private let buttonLabel: UILabel = {
@@ -11,13 +11,6 @@ final class SettingTableViewButton: UIButton {
         label.translatesAutoresizingMaskIntoConstraints = false
         return label
     }()
-    
-//    private let separator: UIView = {
-//        let view = UIView()
-//        view.backgroundColor = UIColor.etSeparators
-//        view.translatesAutoresizingMaskIntoConstraints = false
-//        return view
-//    }()
     
     // MARK: - Init
     
@@ -32,17 +25,7 @@ final class SettingTableViewButton: UIButton {
         super.init(coder: coder)
         setupUI()
     }
-    
-    // MARK: - Configuration
-    
-    
-//    func hideSeparator() {
-//        separator.isHidden = true
-//    }
-//    
-//    func showSeparator() {
-//        separator.isHidden = false
-//    }
+
     
     // MARK: - Layout
     
@@ -58,14 +41,9 @@ final class SettingTableViewButton: UIButton {
         
         NSLayoutConstraint.activate([
             
-            buttonLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            buttonLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 16),
             buttonLabel.centerYAnchor.constraint(equalTo: centerYAnchor),
             buttonLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -16),
-            
-//            separator.leadingAnchor.constraint(equalTo: leadingAnchor),
-//            separator.trailingAnchor.constraint(equalTo: trailingAnchor),
-//            separator.bottomAnchor.constraint(equalTo: bottomAnchor),
-//            separator.heightAnchor.constraint(equalToConstant: 1)
         ])
     }
 }
